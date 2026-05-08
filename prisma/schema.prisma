@@ -1,0 +1,46 @@
+// Prisma schema — Size Norm App
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Multi-tenant root entity. Every merchant-scoped business table FKs to shopDomain.
+// Sessions are stored separately by @shopify/shopify-app-session-storage-prisma.
+model Shop {
+  id            String    @id @default(cuid())
+  shopDomain    String    @unique
+  installedAt   DateTime  @default(now())
+  uninstalledAt DateTime?
+
+  @@index([shopDomain])
+}
+
+// Required by @shopify/shopify-app-session-storage-prisma. Schema is prescribed
+// by the package; do not change field names or types.
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+
+  @@index([shop])
+}
