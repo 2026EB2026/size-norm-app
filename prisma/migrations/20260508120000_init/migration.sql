@@ -1,4 +1,4 @@
-﻿-- CreateSchema
+-- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateTable
@@ -42,4 +42,3 @@ CREATE INDEX "Shop_shopDomain_idx" ON "Shop"("shopDomain");
 
 -- CreateIndex
 CREATE INDEX "Session_shop_idx" ON "Session"("shop");
-
