@@ -2,7 +2,8 @@
   "name": "size-norm-app",
   "private": true,
   "scripts": {
-    "build": "react-router build",
+    "build": "prisma migrate deploy && react-router build",
+    "postinstall": "prisma generate",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
