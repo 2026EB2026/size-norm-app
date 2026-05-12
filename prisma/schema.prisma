@@ -10,19 +10,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Multi-tenant root entity. Every merchant-scoped business table FKs to shopDomain.
-// Sessions are stored separately by @shopify/shopify-app-session-storage-prisma.
+// ── Multi-tenant root entity ────────────────────────────────────────────
+// Every merchant-scoped business table FKs to shopDomain. Sessions are
+// stored separately by @shopify/shopify-app-session-storage-prisma.
 model Shop {
   id            String    @id @default(cuid())
   shopDomain    String    @unique
   installedAt   DateTime  @default(now())
   uninstalledAt DateTime?
+  // Set the first time the install seeds the 28 V1 scales + generic tables.
+  // ensureSeed() in lib/db/seed.ts is a no-op when this is non-null.
+  seededAt      DateTime?
 
-  @@index([shopDomain])
+  // Merchant-configurable settings. Defaults apply on first install and the
+  // merchant edits via the Settings page (M3).
+  globalDisplayMode DisplayMode    @default(MAIN_PLUS_TABLE)
+  globalScale       SourceScale    @default(EU)
+  // JSON shape: Record<MarketCode, SourceScale> — e.g. { IT: "EU", UK: "UK",
+  // US: "US", JP: "JP_MM" }. When a market is missing from this map, the
+  // PDP falls back to globalScale.
+  marketScales      Json?
+  fractionFormat    FractionFormat @default(UNICODE)
+
+  sizeScales       SizeScale[]
+  conversionTables ConversionTable[]
 }
 
-// Required by @shopify/shopify-app-session-storage-prisma. Schema is prescribed
-// by the package; do not change field names or types.
+// ── Session table required by @shopify/shopify-app-session-storage-prisma ──
+// The package prescribes this schema verbatim; do not change field names or
+// types.
 model Session {
   id            String    @id
   shop          String
@@ -43,4 +59,91 @@ model Session {
   refreshTokenExpires DateTime?
 
   @@index([shop])
+}
+
+// ── Size scale (Atelier) ────────────────────────────────────────────────
+// One row per merchant-defined scale. The seed loads 28 V1 scales on first
+// install (lib/db/seed.ts). The merchant can edit labels/aliases or create
+// new scales from the admin UI.
+model SizeScale {
+  id          String      @id @default(cuid())
+  shopDomain  String
+  sigla       String
+  name        String
+  category    Category    @default(FOOTWEAR)
+  gender      Gender
+  sourceScale SourceScale
+  // labels: string[] — canonical labels exactly as merchant uses them.
+  labels      Json
+  // aliases: Record<string, string> — input-form → canonical-label map.
+  // Keys are lowercase for case-insensitive matching at parse time.
+  aliases     Json
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  shop Shop @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
+
+  @@unique([shopDomain, sigla])
+  @@index([shopDomain])
+}
+
+// ── Conversion table ───────────────────────────────────────────────────
+// For a given (shopDomain, scaleSigla), there is at most one generic table
+// (brand=null, isSeed=true initially) plus zero or more brand-specific
+// tables (brand="Gucci", brand="Adidas", ...). The lookup pipeline tries
+// brand-specific first, then falls back to generic.
+//
+// Application-level invariant: at most one row per (shopDomain, scaleSigla,
+// brand). DB does NOT enforce uniqueness for brand=null rows (Postgres
+// treats NULL as distinct in UNIQUE constraints); the seed function and
+// admin actions enforce it.
+model ConversionTable {
+  id          String   @id @default(cuid())
+  shopDomain  String
+  scaleSigla  String
+  brand       String?  // null = generic fallback
+  // mappings: ConversionMapping[] — see app/lib/conversion/types.ts.
+  mappings    Json
+  isSeed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
+
+  @@index([shopDomain])
+  @@index([shopDomain, scaleSigla])
+  @@index([shopDomain, scaleSigla, brand])
+}
+
+// ── Enums ──────────────────────────────────────────────────────────────
+enum Gender {
+  MEN
+  WOMEN
+  UNISEX
+  KID
+}
+
+enum SourceScale {
+  US
+  EU
+  UK
+  JP_MM
+  DOUBLE
+  MW_COMBINED
+}
+
+enum Category {
+  FOOTWEAR
+}
+
+enum DisplayMode {
+  SINGLE_SCALE
+  FULL_TABLE
+  MAIN_PLUS_TABLE
+}
+
+enum FractionFormat {
+  UNICODE
+  DECIMAL
+  ASCII
 }

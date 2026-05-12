@@ -4,9 +4,12 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate } from "../shopify.server";
+import { ensureSeed } from "../lib/db/seed";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
+  // First-install seed: runs once per shop, then becomes a no-op.
+  await ensureSeed(session.shop);
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
@@ -19,6 +22,9 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <ui-nav-menu>
         <a href="/app" rel="home">Home</a>
+        <a href="/app/scales">Scale Atelier</a>
+        <a href="/app/tables">Conversion Tables</a>
+        <a href="/app/settings">Settings</a>
       </ui-nav-menu>
       <Outlet />
     </AppProvider>
