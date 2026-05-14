@@ -36,6 +36,7 @@ model Shop {
   conversionTables  ConversionTable[]
   alerts            ConversionAlert[]
   productSnapshots  ProductSnapshot[]
+  bulkJobs          BulkJob[]
 }
 
 // ── Session table required by @shopify/shopify-app-session-storage-prisma ──
@@ -113,6 +114,46 @@ model ConversionAlert {
   @@index([shopDomain])
   @@index([shopDomain, resolvedAt])
   @@index([shopDomain, productId])
+}
+
+// ── Bulk job ───────────────────────────────────────────────────────────
+// One row per long-running bulk operation (full re-scan, reconvert-by-scale,
+// reconvert-by-brand). Created by the admin UI when the merchant clicks a
+// trigger button; updated by the Inngest functions as they progress. The
+// admin UI polls this table for live progress reporting.
+model BulkJob {
+  id           String         @id @default(cuid())
+  shopDomain   String
+  type         BulkJobType
+  status       BulkJobStatus  @default(PENDING)
+  // Filter context (only set for RECONVERT_BY_SCALE / RECONVERT_BY_BRAND).
+  scaleSigla   String?
+  brand        String?
+  total        Int            @default(0)
+  processed    Int            @default(0)
+  errors       Int            @default(0)
+  startedAt    DateTime       @default(now())
+  finishedAt   DateTime?
+  // When the job fails terminally (not just a per-product error).
+  errorMessage String?
+
+  shop Shop @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
+
+  @@index([shopDomain, status])
+  @@index([shopDomain, startedAt])
+}
+
+enum BulkJobType {
+  FULL_RESCAN
+  RECONVERT_BY_SCALE
+  RECONVERT_BY_BRAND
+}
+
+enum BulkJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
 }
 
 // ── Product snapshot ───────────────────────────────────────────────────

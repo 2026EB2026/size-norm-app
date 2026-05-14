@@ -27,6 +27,7 @@ export default function App() {
         <a href="/app/alerts">Alerts</a>
         <a href="/app/scales">Scale Atelier</a>
         <a href="/app/tables">Conversion Tables</a>
+        <a href="/app/bulk">Bulk</a>
         <a href="/app/settings">Settings</a>
       </ui-nav-menu>
       <Outlet />
