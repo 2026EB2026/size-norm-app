@@ -20,6 +20,16 @@ api_version = "2025-10"
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
+  # Handled by: /app/routes/webhooks.products.create.tsx
+  [[webhooks.subscriptions]]
+  topics = ["products/create"]
+  uri = "/webhooks/products/create"
+
+  # Handled by: /app/routes/webhooks.products.update.tsx
+  [[webhooks.subscriptions]]
+  topics = ["products/update"]
+  uri = "/webhooks/products/update"
+
   # Webhooks can have filters
   # Only receive webhooks for product updates with a product price >= 10.00
   # See: https://shopify.dev/docs/apps/build/webhooks/customize/filters

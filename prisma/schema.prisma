@@ -32,8 +32,10 @@ model Shop {
   marketScales      Json?
   fractionFormat    FractionFormat @default(UNICODE)
 
-  sizeScales       SizeScale[]
-  conversionTables ConversionTable[]
+  sizeScales        SizeScale[]
+  conversionTables  ConversionTable[]
+  alerts            ConversionAlert[]
+  productSnapshots  ProductSnapshot[]
 }
 
 // ── Session table required by @shopify/shopify-app-session-storage-prisma ──
@@ -84,6 +86,52 @@ model SizeScale {
   shop Shop @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
 
   @@unique([shopDomain, sigla])
+  @@index([shopDomain])
+}
+
+// ── Conversion alert ───────────────────────────────────────────────────
+// One row per processing failure (gender mismatch, missing metafield, label
+// not recognized, etc). The merchant sees these in the /app/alerts page and
+// resolves them by either editing the product/metafield or forcing a manual
+// override (which sets `resolvedAt` and `resolvedBy`).
+model ConversionAlert {
+  id           String   @id @default(cuid())
+  shopDomain   String
+  productId    String   // Shopify GID e.g. "gid://shopify/Product/123"
+  variantId    String?  // null when the error is product-level (no variant context)
+  errorCode    String   // ConversionErrorCode from app/lib/conversion/types.ts
+  errorMessage String
+  // Free-form context the processor wants to surface (e.g. the raw label,
+  // the scale's expected gender, the missing metafield name).
+  payload      Json?
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+  resolvedBy   String?   // shop staff email or "manual_override"
+
+  shop Shop @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
+
+  @@index([shopDomain])
+  @@index([shopDomain, resolvedAt])
+  @@index([shopDomain, productId])
+}
+
+// ── Product snapshot ───────────────────────────────────────────────────
+// SHA-256 hash of the product fields the processor reads (vendor, gender
+// metafield, scale_sigla metafield, variant options). Stored per product so
+// the webhook handler can short-circuit when nothing relevant changed —
+// `products/update` fires on many unrelated edits (description, images, …)
+// and we don't want to thrash the GraphQL API or re-trigger draft/alert
+// logic for noise.
+model ProductSnapshot {
+  id         String   @id @default(cuid())
+  shopDomain String
+  productId  String
+  hash       String   // sha256 hex of the relevant fields
+  updatedAt  DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
+
+  @@unique([shopDomain, productId])
   @@index([shopDomain])
 }
 

@@ -3,6 +3,10 @@ import {
   GENERIC_CONVERSION_TABLES_V1,
 } from "../conversion";
 import type { Gender, SourceScale } from "../conversion";
+import {
+  ensureMetafieldDefinitions,
+  type Admin,
+} from "../shopify/client";
 import prisma from "../../db.server";
 
 /**
@@ -37,16 +41,22 @@ function toPrismaSourceScale(
  *
  * On the first authenticated visit by a merchant, this:
  *   1. Upserts the `Shop` row (so `installedAt` is recorded).
- *   2. If `Shop.seededAt` is null, inserts the 28 V1 `SizeScale` rows and the
+ *   2. Creates Shopify Metafield Definitions for the `size_norm` namespace
+ *      (idempotent — each definition swallows `TAKEN` errors).
+ *   3. If `Shop.seededAt` is null, inserts the 28 V1 `SizeScale` rows and the
  *      28 generic `ConversionTable` rows from the conversion engine's seed.
- *   3. Sets `Shop.seededAt = now()` so subsequent calls are no-ops.
+ *   4. Sets `Shop.seededAt = now()` so subsequent calls are no-ops.
  *
- * Safe to call on every page load — the `seededAt` check makes it O(1) after
- * the first call.
+ * Safe to call on every page load — the `seededAt` check makes the DB seed
+ * O(1) after the first call. The Shopify metafield-definitions call is also
+ * idempotent and inexpensive, but is only retried if seededAt is still null.
  *
  * Called from `app/routes/app.tsx` loader.
  */
-export async function ensureSeed(shopDomain: string): Promise<void> {
+export async function ensureSeed(
+  shopDomain: string,
+  admin: Admin,
+): Promise<void> {
   const shop = await prisma.shop.upsert({
     where: { shopDomain },
     create: { shopDomain },
@@ -54,6 +64,10 @@ export async function ensureSeed(shopDomain: string): Promise<void> {
   });
 
   if (shop.seededAt !== null) return;
+
+  // Create Shopify Metafield Definitions BEFORE seeding DB so that if Shopify
+  // is unreachable we don't mark seededAt and we'll retry on the next visit.
+  await ensureMetafieldDefinitions(admin);
 
   // Run scale + table seed inside a single transaction so partial failures
   // don't leave the shop in a half-seeded state.

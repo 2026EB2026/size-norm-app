@@ -7,9 +7,11 @@ import { authenticate } from "../shopify.server";
 import { ensureSeed } from "../lib/db/seed";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  // First-install seed: runs once per shop, then becomes a no-op.
-  await ensureSeed(session.shop);
+  const { admin, session } = await authenticate.admin(request);
+  // First-install seed: runs once per shop, then becomes a no-op. Creates
+  // Shopify Metafield Definitions + inserts 28 V1 scales + 28 generic
+  // conversion tables on the first visit.
+  await ensureSeed(session.shop, admin);
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
@@ -22,6 +24,7 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <ui-nav-menu>
         <a href="/app" rel="home">Home</a>
+        <a href="/app/alerts">Alerts</a>
         <a href="/app/scales">Scale Atelier</a>
         <a href="/app/tables">Conversion Tables</a>
         <a href="/app/settings">Settings</a>
