@@ -75,9 +75,25 @@ export async function ensureSeed(
   // Step 2 — Metafield Definitions. Independent of seededAt because earlier
   // app versions didn't create them, and existing installs need them
   // back-filled. Cached per-process to keep page loads cheap on warm starts.
+  //
+  // Wrapped in try/catch: a failure here (e.g. Shopify GraphQL hiccup,
+  // unexpected userError) MUST NOT block the admin page from loading. The
+  // function is idempotent, so we leave the per-process flag UNSET on
+  // failure so the next request retries.
   if (!metafieldDefsEnsuredInProcess.has(shopDomain)) {
-    await ensureMetafieldDefinitions(admin);
-    metafieldDefsEnsuredInProcess.add(shopDomain);
+    try {
+      await ensureMetafieldDefinitions(admin);
+      metafieldDefsEnsuredInProcess.add(shopDomain);
+    } catch (e) {
+      // eslint-disable-next-line no-undef, no-console
+      console.warn(
+        `[size-norm] ensureMetafieldDefinitions failed for ${shopDomain}:`,
+        e instanceof Error ? e.message : e,
+      );
+      // Intentionally don't rethrow — page should still load even if the
+      // metafield UI isn't fully wired yet. Merchant can create defs
+      // manually as a fallback.
+    }
   }
 
   if (shop.seededAt !== null) return;
