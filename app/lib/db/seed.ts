@@ -37,19 +37,28 @@ function toPrismaSourceScale(
 }
 
 /**
+ * Per-process cache of which shops have had Metafield Definitions ensured
+ * during the current Vercel function lifetime. Avoids re-running the 11
+ * GraphQL idempotent definition-create calls on every admin page load
+ * (since serverless processes are reused for many requests).
+ *
+ * On a cold start this resets — that's fine: the underlying call swallows
+ * `TAKEN` errors so re-running is cheap and safe.
+ */
+const metafieldDefsEnsuredInProcess = new Set<string>();
+
+/**
  * Idempotent first-install seed.
  *
  * On the first authenticated visit by a merchant, this:
  *   1. Upserts the `Shop` row (so `installedAt` is recorded).
  *   2. Creates Shopify Metafield Definitions for the `size_norm` namespace
- *      (idempotent — each definition swallows `TAKEN` errors).
+ *      (idempotent — each definition swallows `TAKEN` errors). This runs
+ *      ONCE per Vercel process, independent of `seededAt`, so shops that
+ *      installed before this code existed still get their definitions.
  *   3. If `Shop.seededAt` is null, inserts the 28 V1 `SizeScale` rows and the
  *      28 generic `ConversionTable` rows from the conversion engine's seed.
  *   4. Sets `Shop.seededAt = now()` so subsequent calls are no-ops.
- *
- * Safe to call on every page load — the `seededAt` check makes the DB seed
- * O(1) after the first call. The Shopify metafield-definitions call is also
- * idempotent and inexpensive, but is only retried if seededAt is still null.
  *
  * Called from `app/routes/app.tsx` loader.
  */
@@ -63,11 +72,15 @@ export async function ensureSeed(
     update: {},
   });
 
-  if (shop.seededAt !== null) return;
+  // Step 2 — Metafield Definitions. Independent of seededAt because earlier
+  // app versions didn't create them, and existing installs need them
+  // back-filled. Cached per-process to keep page loads cheap on warm starts.
+  if (!metafieldDefsEnsuredInProcess.has(shopDomain)) {
+    await ensureMetafieldDefinitions(admin);
+    metafieldDefsEnsuredInProcess.add(shopDomain);
+  }
 
-  // Create Shopify Metafield Definitions BEFORE seeding DB so that if Shopify
-  // is unreachable we don't mark seededAt and we'll retry on the next visit.
-  await ensureMetafieldDefinitions(admin);
+  if (shop.seededAt !== null) return;
 
   // Run scale + table seed inside a single transaction so partial failures
   // don't leave the shop in a half-seeded state.
