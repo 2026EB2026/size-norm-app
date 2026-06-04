@@ -1,0 +1,18 @@
+{
+  "name": "Size Norm — Conversion table",
+  "settings": {
+    "rendering_heading": "Rendering",
+    "display_mode_label": "Display mode",
+    "display_mode_single": "A — Single scale only",
+    "display_mode_full": "B — Full conversion table",
+    "display_mode_main_plus": "C — Main + expandable table",
+    "default_scale_label": "Default scale to show",
+    "default_scale_info": "Used in mode A and as the highlighted column in mode C.",
+    "fraction_format_label": "Fraction format",
+    "fit_notes_heading": "Fit notes",
+    "show_fit_notes_label": "Show fit notes block",
+    "fit_notes_it_label": "Fit notes (Italian)",
+    "fit_notes_en_label": "Fit notes (English)",
+    "fit_notes_info": "Leave empty to use the default translation."
+  }
+}

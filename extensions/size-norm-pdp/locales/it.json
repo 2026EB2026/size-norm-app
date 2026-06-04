@@ -1,0 +1,14 @@
+{
+  "block": {
+    "scale_us": "US",
+    "scale_eu": "EU",
+    "scale_uk": "UK",
+    "scale_jp": "JP-mm",
+    "source_label": "Etichetta",
+    "show_all_conversions": "Mostra tutte le conversioni",
+    "no_conversion_available": "Nessuna conversione disponibile per questa variante.",
+    "fit_notes_heading": "Note di vestibilità",
+    "fit_notes_default_it": "Veste regolare. Se sei tra due taglie, prendi la taglia superiore.",
+    "fit_notes_default_en": "Fits regular. If between sizes, size up."
+  }
+}

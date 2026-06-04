@@ -1,0 +1,164 @@
+{%- comment -%}
+  Size Norm — PDP conversion table block.
+
+  Reads variant metafields from the `size_norm` namespace (populated by the
+  webhook processor in M4) and renders a US/EU/UK/JP-mm conversion table in
+  one of three layouts (A/B/C). Sits ALONGSIDE the theme's native size
+  selector — it does not replace it.
+
+  Variant change handling: each variant's matrix is embedded as data on the
+  root element; the bundled JS listens to changes on the product form's
+  `id` input and re-renders.
+{%- endcomment -%}
+
+{%- liquid
+  assign display_mode = block.settings.display_mode | default: 'MAIN_PLUS_TABLE'
+  assign fraction_format = block.settings.fraction_format | default: 'UNICODE'
+  assign default_scale = block.settings.default_scale | default: 'EU'
+  assign show_fit_notes = block.settings.show_fit_notes
+
+  assign current_variant = product.selected_or_first_available_variant
+  assign current_matrix = current_variant.metafields.size_norm.matrix.value
+  assign current_source = current_variant.metafields.size_norm.source_label.value
+-%}
+
+<size-norm-table
+  class="size-norm"
+  data-display-mode="{{ display_mode }}"
+  data-fraction-format="{{ fraction_format }}"
+  data-default-scale="{{ default_scale }}"
+  data-label-us="{{ 'block.scale_us' | t | escape }}"
+  data-label-eu="{{ 'block.scale_eu' | t | escape }}"
+  data-label-uk="{{ 'block.scale_uk' | t | escape }}"
+  data-label-jp="{{ 'block.scale_jp' | t | escape }}"
+  data-label-source="{{ 'block.source_label' | t | escape }}"
+  data-label-show-all="{{ 'block.show_all_conversions' | t | escape }}"
+  data-label-no-data="{{ 'block.no_conversion_available' | t | escape }}"
+  {{ block.shopify_attributes }}
+>
+  <script
+    type="application/json"
+    data-size-norm-variants
+  >
+    {
+      {%- for variant in product.variants -%}
+        {%- assign m = variant.metafields.size_norm.matrix.value -%}
+        {%- assign source = variant.metafields.size_norm.source_label.value -%}
+        {%- assign override = variant.metafields.size_norm.manual_override.value -%}
+        "{{ variant.id }}": {
+          "matrix": {%- if m -%}{{ m | json }}{%- else -%}null{%- endif -%},
+          "source_label": {%- if source -%}{{ source | json }}{%- else -%}null{%- endif -%},
+          "manual_override": {%- if override -%}true{%- else -%}false{%- endif -%}
+        }{%- unless forloop.last -%},{%- endunless -%}
+      {%- endfor -%}
+    }
+  </script>
+
+  <div class="size-norm__container" data-size-norm-container>
+    {%- if current_matrix -%}
+      {%- render 'size-norm-render',
+        matrix: current_matrix,
+        source_label: current_source,
+        display_mode: display_mode,
+        fraction_format: fraction_format,
+        default_scale: default_scale
+      -%}
+    {%- else -%}
+      <p class="size-norm__no-data">
+        {{ 'block.no_conversion_available' | t }}
+      </p>
+    {%- endif -%}
+  </div>
+
+  {%- if show_fit_notes -%}
+    <div class="size-norm__fit-notes">
+      <h3 class="size-norm__fit-notes-heading">{{ 'block.fit_notes_heading' | t }}</h3>
+      <div class="size-norm__fit-notes-grid">
+        <div class="size-norm__fit-notes-col">
+          <span class="size-norm__fit-notes-lang">IT</span>
+          <p>{{ block.settings.fit_notes_it | default: 'block.fit_notes_default_it' | t }}</p>
+        </div>
+        <div class="size-norm__fit-notes-col">
+          <span class="size-norm__fit-notes-lang">EN</span>
+          <p>{{ block.settings.fit_notes_en | default: 'block.fit_notes_default_en' | t }}</p>
+        </div>
+      </div>
+    </div>
+  {%- endif -%}
+</size-norm-table>
+
+{{ 'size-norm.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'size-norm.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Size Norm — Conversion table",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "Rendering"
+    },
+    {
+      "type": "radio",
+      "id": "display_mode",
+      "label": "Display mode",
+      "default": "MAIN_PLUS_TABLE",
+      "options": [
+        { "value": "SINGLE_SCALE", "label": "A — Single scale only" },
+        { "value": "FULL_TABLE", "label": "B — Full conversion table" },
+        { "value": "MAIN_PLUS_TABLE", "label": "C — Main + expandable table" }
+      ]
+    },
+    {
+      "type": "radio",
+      "id": "default_scale",
+      "label": "Default scale to show",
+      "info": "Used in mode A and as the highlighted column in mode C.",
+      "default": "EU",
+      "options": [
+        { "value": "US", "label": "US" },
+        { "value": "EU", "label": "EU" },
+        { "value": "UK", "label": "UK" },
+        { "value": "JP_MM", "label": "JP mondopoint (mm)" }
+      ]
+    },
+    {
+      "type": "radio",
+      "id": "fraction_format",
+      "label": "Fraction format",
+      "default": "UNICODE",
+      "options": [
+        { "value": "UNICODE", "label": "Unicode (½)" },
+        { "value": "DECIMAL", "label": "Decimal (.5)" },
+        { "value": "ASCII", "label": "ASCII (1/2)" }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Fit notes"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_fit_notes",
+      "label": "Show fit notes block",
+      "default": true
+    },
+    {
+      "type": "textarea",
+      "id": "fit_notes_it",
+      "label": "Fit notes (Italian)",
+      "info": "Leave empty to use the default translation."
+    },
+    {
+      "type": "textarea",
+      "id": "fit_notes_en",
+      "label": "Fit notes (English)",
+      "info": "Leave empty to use the default translation."
+    }
+  ]
+}
+{% endschema %}

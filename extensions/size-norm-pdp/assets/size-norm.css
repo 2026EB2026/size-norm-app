@@ -1,0 +1,149 @@
+/*
+ * Size Norm PDP block — minimal, theme-friendly styling.
+ *
+ * The block inherits typography from the host theme (font-family, font-size,
+ * color, line-height) so it visually integrates with the surrounding PDP
+ * content. We only set spacing, borders, and layout primitives.
+ */
+
+.size-norm {
+  display: block;
+  margin: 1rem 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+}
+
+.size-norm__container {
+  margin-bottom: 0.75rem;
+}
+
+.size-norm__no-data {
+  margin: 0;
+  font-size: 0.9em;
+  opacity: 0.65;
+  font-style: italic;
+}
+
+/* SINGLE_SCALE layout */
+.size-norm__pair {
+  display: grid;
+  grid-template-columns: max-content auto;
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
+  margin: 0;
+}
+
+.size-norm__pair dt {
+  font-weight: 600;
+}
+
+.size-norm__pair dd {
+  margin: 0;
+}
+
+.size-norm__source-label-key {
+  opacity: 0.65;
+  font-weight: 400;
+}
+
+/* FULL_TABLE layout */
+.size-norm__table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 0.25rem 0;
+  font-size: 0.95em;
+}
+
+.size-norm__table th,
+.size-norm__table td {
+  padding: 0.4rem 0.6rem;
+  text-align: center;
+  border: 1px solid currentColor;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.size-norm__table th {
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* MAIN_PLUS_TABLE layout */
+.size-norm__main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.size-norm__main-label {
+  font-weight: 600;
+}
+
+.size-norm__main-value {
+  font-size: 1.15em;
+}
+
+.size-norm__main-source {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+.size-norm__details > summary {
+  cursor: pointer;
+  font-size: 0.9em;
+  opacity: 0.85;
+  user-select: none;
+  padding: 0.25rem 0;
+}
+
+.size-norm__details > summary:hover {
+  opacity: 1;
+}
+
+.size-norm__details[open] > summary {
+  margin-bottom: 0.25rem;
+}
+
+/* Fit notes */
+.size-norm__fit-notes {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.size-norm__fit-notes-heading {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.size-norm__fit-notes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.size-norm__fit-notes-col p {
+  margin: 0;
+  font-size: 0.9em;
+  line-height: 1.45;
+}
+
+.size-norm__fit-notes-lang {
+  display: inline-block;
+  font-size: 0.7em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  opacity: 0.55;
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 480px) {
+  .size-norm__fit-notes-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
