@@ -39,6 +39,8 @@ export {
   BRAND_CONVERSION_TABLES_V1,
 } from "./brand-scales-seed";
 
+export { BRAND_CM_OVERRIDES_V1 } from "./brand-cm-overrides";
+
 export {
   MEN_MASTER,
   WOMEN_MASTER,

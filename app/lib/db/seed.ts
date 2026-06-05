@@ -1,10 +1,12 @@
 import {
   ATELIER_SCALES_V1,
+  BRAND_CM_OVERRIDES_V1,
   BRAND_CONVERSION_TABLES_V1,
   BRAND_SCALES_V1,
   GENERIC_CONVERSION_TABLES_V1,
 } from "../conversion";
 import type {
+  ConversionMapping,
   ConversionTable,
   Gender,
   SizeScale,
@@ -39,8 +41,37 @@ function toPrismaSourceScale(
 
 /** Cache of which shops have had metafield definitions ensured in this process. */
 const metafieldDefsEnsuredInProcess = new Set<string>();
-/** Cache of which shops have had brand scales seeded in this process. */
+/**
+ * Cache of which shops have had brand scales seeded in this process.
+ *
+ * The seed value embeds the CM-overrides revision so that updating the
+ * overrides file bumps the key and forces a re-seed at the next visit,
+ * propagating new CM data to every shop's existing tables. Bump
+ * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
+ * scales seed or its CM-overrides companion file.
+ */
+const BRAND_SEED_REVISION = "v2-cm-overrides";
 const brandScalesSeededInProcess = new Set<string>();
+
+/**
+ * Merges hand-sourced CM data from {@link BRAND_CM_OVERRIDES_V1} into the
+ * mapping rows of a brand-specific conversion table. Returns a new array
+ * with the overrides applied; the input is not mutated. Mappings whose
+ * sourceLabel doesn't appear in the override map are passed through
+ * unchanged, preserving every other field of each row.
+ */
+function applyCmOverrides(
+  scaleSigla: string,
+  mappings: ConversionMapping[],
+): ConversionMapping[] {
+  const overrides = BRAND_CM_OVERRIDES_V1[scaleSigla];
+  if (overrides === undefined) return mappings;
+  return mappings.map((m) => {
+    const cm = overrides[m.sourceLabel];
+    if (cm === undefined) return m;
+    return { ...m, cm };
+  });
+}
 
 /**
  * Upserts a single scale + (optionally) its generic conversion table for one
@@ -151,23 +182,35 @@ export async function ensureSeed(
   }
 
   // Step 4 — Brand scales (idempotent, cached per-process). Runs once per
-  // Vercel cold start; afterwards a quick Set check skips the DB work.
-  if (!brandScalesSeededInProcess.has(shopDomain)) {
+  // Vercel cold start (per revision); afterwards a quick Set check skips
+  // the DB work. The cache key includes BRAND_SEED_REVISION so that
+  // shipping a new overrides revision invalidates the in-memory cache and
+  // refreshes the mappings in every shop's existing seed tables.
+  const cacheKey = `${shopDomain}@${BRAND_SEED_REVISION}`;
+  if (!brandScalesSeededInProcess.has(cacheKey)) {
     try {
       await prisma.$transaction(async (tx) => {
         for (const scale of BRAND_SCALES_V1) {
-          const table = BRAND_CONVERSION_TABLES_V1.find(
+          const baseTable = BRAND_CONVERSION_TABLES_V1.find(
             (t) => t.scaleSigla === scale.sigla,
           );
-          await upsertScale(
-            tx as typeof prisma,
-            shopDomain,
-            scale,
-            table ?? null,
-          );
+          // Apply hand-sourced CM overrides on the way in. The original
+          // seed array is untouched; only the per-shop DB rows receive
+          // the patched mappings.
+          const table: ConversionTable | null =
+            baseTable === undefined
+              ? null
+              : {
+                  ...baseTable,
+                  mappings: applyCmOverrides(
+                    baseTable.scaleSigla,
+                    baseTable.mappings,
+                  ),
+                };
+          await upsertScale(tx as typeof prisma, shopDomain, scale, table);
         }
       });
-      brandScalesSeededInProcess.add(shopDomain);
+      brandScalesSeededInProcess.add(cacheKey);
     } catch (e) {
       // eslint-disable-next-line no-undef, no-console
       console.warn(
