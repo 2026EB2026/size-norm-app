@@ -121,39 +121,61 @@ export interface MetafieldWrite {
 }
 
 /**
+ * Maximum number of metafields Shopify accepts in a single `metafieldsSet`
+ * call. Documented limit as of API 2025-10. Exceeding it returns a variable
+ * coercion error (HTTP 200, `errors` populated in body).
+ *
+ * https://shopify.dev/docs/api/admin-graphql/latest/mutations/metafieldsSet
+ */
+const METAFIELDS_SET_BATCH_LIMIT = 25;
+
+/**
  * Writes a batch of metafields (mixed product + variant scope). Throws if
  * Shopify returns userErrors.
+ *
+ * The Shopify `metafieldsSet` mutation only accepts up to 25 metafields per
+ * call, so we chunk the input into successive batches of {@link
+ * METAFIELDS_SET_BATCH_LIMIT}. Each batch is atomic at the mutation level
+ * (Shopify rolls back its own batch on error), but the batches themselves
+ * are not transactional across each other — if batch N+1 fails after batch
+ * N has been committed, the caller has to surface a partial-success state
+ * via alerts. We accept that trade-off: re-running the processor is
+ * idempotent for the same input.
  */
 export async function setMetafields(
   admin: Admin,
   writes: MetafieldWrite[],
 ): Promise<void> {
   if (writes.length === 0) return;
-  const response = await admin.graphql(SET_METAFIELDS, {
-    variables: { metafields: writes },
-  });
-  const json = (await response.json()) as {
-    data?: {
-      metafieldsSet?: {
-        userErrors?: { field: string[]; message: string; code: string }[];
+
+  for (let i = 0; i < writes.length; i += METAFIELDS_SET_BATCH_LIMIT) {
+    const batch = writes.slice(i, i + METAFIELDS_SET_BATCH_LIMIT);
+    const response = await admin.graphql(SET_METAFIELDS, {
+      variables: { metafields: batch },
+    });
+    const json = (await response.json()) as {
+      data?: {
+        metafieldsSet?: {
+          userErrors?: { field: string[]; message: string; code: string }[];
+        };
       };
+      errors?: { message: string }[];
     };
-    errors?: { message: string }[];
-  };
-  if (json.errors !== undefined && json.errors.length > 0) {
-    throw new Error(
-      `GraphQL errors setting metafields: ${json.errors
-        .map((e) => e.message)
-        .join("; ")}`,
-    );
-  }
-  const userErrors = json.data?.metafieldsSet?.userErrors ?? [];
-  if (userErrors.length > 0) {
-    throw new Error(
-      `metafieldsSet userErrors: ${userErrors
-        .map((e) => `[${e.code}] ${e.field?.join(".") ?? ""}: ${e.message}`)
-        .join("; ")}`,
-    );
+    if (json.errors !== undefined && json.errors.length > 0) {
+      throw new Error(
+        `GraphQL errors setting metafields (batch ${i}-${i + batch.length}): ${json.errors
+          .map((e) => e.message)
+          .join("; ")}`,
+      );
+    }
+    const userErrors = json.data?.metafieldsSet?.userErrors ?? [];
+    if (userErrors.length > 0) {
+      throw new Error(
+        `metafieldsSet userErrors (batch ${i}-${i + batch.length}): ${userErrors
+          .map((e) => `[${e.code}] ${e.field?.join(".") ?? ""}: ${e.message}`)
+          .join("; ")}`,
+      );
+    }
   }
 }
 
@@ -342,7 +364,7 @@ export const METAFIELD_DEFINITIONS = [
     name: "Size Norm — Matrix (JSON)",
     namespace: "size_norm",
     key: "matrix",
-    description: "Full {us, eu, uk, jpMm} object for fast PDP rendering.",
+    description: "Full {us, eu, uk, cm, jpMm} object for fast PDP rendering.",
     type: "json",
     ownerType: "PRODUCTVARIANT" as const,
   },
