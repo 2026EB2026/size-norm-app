@@ -11,8 +11,9 @@
     - fraction_format: UNICODE | DECIMAL | ASCII
     - default_scale: US | EU | UK | CM | JP — primary scale to highlight
 
-  Display columns (5): US | EU | UK | CM | JP. JP value is jpMm/10 to keep
-  Japanese mondopoint convention in cm rather than the raw mm integer.
+  Display columns (5): US | EU | UK | CM | JP. JP is shown as the raw
+  Japanese mondopoint mm integer (e.g. 240) to match what's persisted in
+  the JSON metafield. CM is the human-readable cm value (e.g. 24).
   Always render all columns even when individual values are null (shown as
   "—") so the matrix stays visually consistent across products.
 {%- endcomment -%}
@@ -22,12 +23,7 @@
   assign m_eu = matrix.eu
   assign m_uk = matrix.uk
   assign m_cm = matrix.cm
-  assign m_jp_mm = matrix.jpMm
-  if m_jp_mm
-    assign m_jp = m_jp_mm | divided_by: 10.0 | round: 1
-  else
-    assign m_jp = nil
-  endif
+  assign m_jp = matrix.jpMm
 
   case default_scale
     when 'US'

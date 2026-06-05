@@ -142,13 +142,8 @@ class SizeNormTable extends HTMLElement {
         return { label: this._labels.uk, value: matrix.uk };
       case "CM":
         return { label: this._labels.cm, value: matrix.cm };
-      case "JP_MM": {
-        const jpValue =
-          matrix.jpMm === null || matrix.jpMm === undefined
-            ? null
-            : Math.round(matrix.jpMm) / 10;
-        return { label: this._labels.jp, value: jpValue };
-      }
+      case "JP_MM":
+        return { label: this._labels.jp, value: matrix.jpMm };
       default:
         return { label: this._labels.eu, value: matrix.eu };
     }
@@ -165,11 +160,10 @@ class SizeNormTable extends HTMLElement {
     const eu = this._displayValue(matrix.eu);
     const uk = this._displayValue(matrix.uk);
     const cm = this._displayValue(matrix.cm);
-    // JP mondopoint stored as int mm; display as cm with 1 decimal (or "—").
-    const jp =
-      matrix.jpMm === null || matrix.jpMm === undefined
-        ? "—"
-        : (Math.round(matrix.jpMm) / 10).toString();
+    // JP mondopoint stored as int mm; render the raw integer (e.g. 240) to
+    // match what's persisted in the JSON metafield. CM column already
+    // carries the human-readable cm value.
+    const jp = this._displayValue(matrix.jpMm);
     const source = sourceLabel ?? "";
 
     if (mode === "SINGLE_SCALE") {
