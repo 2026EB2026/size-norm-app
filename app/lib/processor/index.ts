@@ -75,6 +75,38 @@ function slugifyBrand(vendor: string): string {
 }
 
 /**
+ * Canonicalizes a free-form gender value to the four enum values the engine
+ * uses (`men`, `women`, `unisex`, `kid`). Accepts common merchant inputs in
+ * English (singular/plural) and Italian:
+ *   - men, man, uomo, maschile → "men"
+ *   - women, woman, donna, femminile → "women"
+ *   - unisex → "unisex"
+ *   - kid, kids, bambino, bambina, boy, girl → "kid"
+ *
+ * Returns `null` for unrecognised values so downstream code can surface a
+ * MISSING_METAFIELD alert with a helpful message.
+ */
+export function normalizeGender(raw: string | null): string | null {
+  if (raw === null) return null;
+  const v = raw.trim().toLowerCase();
+  if (v.length === 0) return null;
+  if (v === "men" || v === "man" || v === "uomo" || v === "maschile") return "men";
+  if (v === "women" || v === "woman" || v === "donna" || v === "femminile") return "women";
+  if (v === "unisex") return "unisex";
+  if (
+    v === "kid" ||
+    v === "kids" ||
+    v === "bambino" ||
+    v === "bambina" ||
+    v === "boy" ||
+    v === "girl"
+  ) {
+    return "kid";
+  }
+  return null;
+}
+
+/**
  * Atelier scale to fall back to when no brand-specific scale matches the
  * product's vendor. Provides "always-something" coverage for the common
  * Italian-retail genders.
@@ -82,7 +114,9 @@ function slugifyBrand(vendor: string): string {
 function atelierFallbackByGender(
   gender: string | null,
 ): string | null {
-  switch ((gender ?? "").toLowerCase()) {
+  // Caller is expected to pass the normalized gender — this function only
+  // matches the canonical 4 values.
+  switch (gender) {
     case "men":
       return "G"; // Scarpe Uomo IT
     case "women":
@@ -112,26 +146,27 @@ function resolveCandidateSigle(product: {
     out.push(product.scaleSigla.trim());
   }
 
+  // Normalize gender once (accepts "woman"/"donna"/"man"/"uomo"/etc).
+  const normalizedGender = normalizeGender(product.gender);
+
   // 2. Auto-derive from vendor + gender + age_category.
   if (
     product.vendor !== null &&
     product.vendor.trim().length > 0 &&
-    product.gender !== null &&
-    product.gender.trim().length > 0
+    normalizedGender !== null
   ) {
     const brand = slugifyBrand(product.vendor);
-    const gender = product.gender.trim().toLowerCase();
     const age =
       product.ageCategory !== null && product.ageCategory.trim().length > 0
         ? product.ageCategory.trim().toLowerCase()
         : "adult";
     if (brand.length > 0) {
-      out.push(`${brand}-${gender}-${age}`);
+      out.push(`${brand}-${normalizedGender}-${age}`);
     }
   }
 
-  // 3. Atelier fallback by gender.
-  const atelier = atelierFallbackByGender(product.gender);
+  // 3. Atelier fallback by normalized gender.
+  const atelier = atelierFallbackByGender(normalizedGender);
   if (atelier !== null) out.push(atelier);
 
   return out;
@@ -190,7 +225,15 @@ export async function runProcessor(
     break;
   }
 
-  const result = processProduct({ product, scale, tables });
+  // Pass a copy of the product with the gender field normalized to the
+  // canonical 4 enum values. This lets the merchant type "woman"/"donna" and
+  // still pass both the MISSING_METAFIELD check and the gender-vs-scale
+  // consistency check in processProduct.
+  const normalizedProduct: typeof product = {
+    ...product,
+    gender: normalizeGender(product.gender),
+  };
+  const result = processProduct({ product: normalizedProduct, scale, tables });
   await applyProcessingResult(admin, prisma, shopDomain, product, result);
   return result;
 }
