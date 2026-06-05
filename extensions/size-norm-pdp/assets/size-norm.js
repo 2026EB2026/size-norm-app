@@ -142,8 +142,13 @@ class SizeNormTable extends HTMLElement {
         return { label: this._labels.uk, value: matrix.uk };
       case "CM":
         return { label: this._labels.cm, value: matrix.cm };
-      case "JP_MM":
-        return { label: this._labels.jp, value: matrix.jpMm };
+      case "JP_MM": {
+        const jpValue =
+          matrix.jpMm === null || matrix.jpMm === undefined
+            ? null
+            : Math.round(matrix.jpMm) / 10;
+        return { label: this._labels.jp, value: jpValue };
+      }
       default:
         return { label: this._labels.eu, value: matrix.eu };
     }
@@ -160,7 +165,11 @@ class SizeNormTable extends HTMLElement {
     const eu = this._displayValue(matrix.eu);
     const uk = this._displayValue(matrix.uk);
     const cm = this._displayValue(matrix.cm);
-    const jp = this._displayValue(matrix.jpMm);
+    // JP mondopoint stored as int mm; display as cm with 1 decimal (or "—").
+    const jp =
+      matrix.jpMm === null || matrix.jpMm === undefined
+        ? "—"
+        : (Math.round(matrix.jpMm) / 10).toString();
     const source = sourceLabel ?? "";
 
     if (mode === "SINGLE_SCALE") {
@@ -182,6 +191,7 @@ class SizeNormTable extends HTMLElement {
             <th>${this._escape(this._labels.eu)}</th>
             <th>${this._escape(this._labels.uk)}</th>
             <th>${this._escape(this._labels.cm)}</th>
+            <th>${this._escape(this._labels.jp)}</th>
           </tr>
         </thead>
         <tbody>
@@ -190,6 +200,7 @@ class SizeNormTable extends HTMLElement {
             <td>${this._escape(eu)}</td>
             <td>${this._escape(uk)}</td>
             <td>${this._escape(cm)}</td>
+            <td>${this._escape(jp)}</td>
           </tr>
         </tbody>
       </table>`;

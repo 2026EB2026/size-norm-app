@@ -43,7 +43,7 @@ export default function ScalesIndex() {
   const { scales } = useLoaderData<typeof loader>();
 
   return (
-    <s-page heading="Scale Atelier">
+    <s-page heading="Scale Taglie">
       <s-button slot="primary-action" href="/app/scales/new">
         Nuova scala
       </s-button>
