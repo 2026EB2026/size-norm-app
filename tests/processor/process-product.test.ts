@@ -79,11 +79,23 @@ describe("processProduct — missing metafields", () => {
     }
   });
 
-  it("emits MISSING_METAFIELD when scaleSigla is null", () => {
+  it("does NOT emit MISSING_METAFIELD when scaleSigla is null (auto-derive handles it)", () => {
+    // With M6.5 brand-official auto-derivation, the orchestrator resolves a
+    // scale from vendor + gender + age_category, so scaleSigla can be null
+    // and the processor still succeeds if a scale was passed in.
     const r = processProduct(input({ scaleSigla: null }));
+    expect(r.kind).toBe("success");
+  });
+
+  it("emits TABLE_NOT_FOUND when no scale is resolved (scaleSigla null + scale arg null)", () => {
+    const r = processProduct({
+      product: product({ scaleSigla: null }),
+      scale: null,
+      tables: [],
+    });
     expect(r.kind).toBe("draft");
     if (r.kind === "draft") {
-      expect(r.productAlert?.errorCode).toBe("MISSING_METAFIELD");
+      expect(r.productAlert?.errorCode).toBe("TABLE_NOT_FOUND");
     }
   });
 
@@ -262,7 +274,8 @@ describe("processProduct — variant-level alerts", () => {
 
 describe("processProduct — error tag delta", () => {
   it("adds the error tag when transitioning to draft", () => {
-    const r = processProduct(input({ scaleSigla: null, tags: [] }));
+    // Trigger draft via missing gender (cleanest single-field failure).
+    const r = processProduct(input({ gender: null, tags: [] }));
     expect(r.kind).toBe("draft");
     if (r.kind === "draft") {
       expect(r.tagsToAdd).toContain(SIZE_NORM_ERROR_TAG);
@@ -272,7 +285,7 @@ describe("processProduct — error tag delta", () => {
 
   it("does not re-add the tag if it's already present", () => {
     const r = processProduct(
-      input({ scaleSigla: null, tags: [SIZE_NORM_ERROR_TAG] }),
+      input({ gender: null, tags: [SIZE_NORM_ERROR_TAG] }),
     );
     if (r.kind === "draft") {
       expect(r.tagsToAdd).toEqual([]);

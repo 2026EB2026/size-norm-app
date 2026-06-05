@@ -192,22 +192,18 @@ export function processProduct(input: ProcessorInput): ProcessingResult {
     return { kind: "skip", reason: "not_footwear" };
   }
 
-  // 2. Required product metafields.
-  const missing: string[] = [];
+  // 2. Required product metafields. `gender` is always required; `scaleSigla`
+  // is OPTIONAL because the orchestrator auto-derives a sigla from
+  // vendor + gender + age_category and falls back to Atelier scales. If
+  // nothing resolves, we'll catch it at step 3 (scale === null).
   if (product.gender === null || product.gender.trim().length === 0) {
-    missing.push("size_norm.gender");
-  }
-  if (product.scaleSigla === null || product.scaleSigla.trim().length === 0) {
-    missing.push("size_norm.scale_sigla");
-  }
-  if (missing.length > 0) {
     const tags = tagsAfter(product.tags, true);
     return {
       kind: "draft",
       productAlert: {
         errorCode: "MISSING_METAFIELD",
-        errorMessage: `Metadati prodotto mancanti: ${missing.join(", ")}`,
-        payload: { missing },
+        errorMessage: `Metadati prodotto mancanti: size_norm.gender`,
+        payload: { missing: ["size_norm.gender"] },
       },
       variantAlerts: [],
       tagsToAdd: tags.add,
@@ -216,15 +212,25 @@ export function processProduct(input: ProcessorInput): ProcessingResult {
     };
   }
 
-  // 3. Scale must exist for this sigla.
+  // 3. The orchestrator must have resolved a scale (via metafield, brand
+  // auto-derive, or Atelier fallback). If still null, nothing matched.
   if (scale === null) {
     const tags = tagsAfter(product.tags, true);
+    const explicitSigla = product.scaleSigla?.trim() ?? "";
+    const errorMessage =
+      explicitSigla.length > 0
+        ? `Scala "${explicitSigla}" non trovata nel sistema`
+        : `Nessuna scala trovata per vendor "${product.vendor ?? "—"}" + gender "${product.gender}". Setta size_norm.scale_sigla manualmente oppure crea la scala brand-specifica.`;
     return {
       kind: "draft",
       productAlert: {
         errorCode: "TABLE_NOT_FOUND",
-        errorMessage: `Scala "${product.scaleSigla}" non trovata nel sistema`,
-        payload: { scaleSigla: product.scaleSigla },
+        errorMessage,
+        payload: {
+          scaleSigla: explicitSigla.length > 0 ? explicitSigla : null,
+          vendor: product.vendor,
+          gender: product.gender,
+        },
       },
       variantAlerts: [],
       tagsToAdd: tags.add,
