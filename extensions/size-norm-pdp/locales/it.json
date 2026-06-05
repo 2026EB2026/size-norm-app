@@ -4,6 +4,7 @@
     "scale_eu": "EU",
     "scale_uk": "UK",
     "scale_jp": "JP-mm",
+    "scale_cm": "CM",
     "source_label": "Etichetta",
     "show_all_conversions": "Mostra tutte le conversioni",
     "no_conversion_available": "Nessuna conversione disponibile per questa variante.",

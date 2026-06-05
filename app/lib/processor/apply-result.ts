@@ -109,6 +109,15 @@ export async function applyProcessingResult(
         value: w.matrix.uk,
       });
     }
+    if (w.matrix.cm !== null) {
+      metafieldWrites.push({
+        ownerId: w.variantId,
+        namespace: "size_norm",
+        key: "cm",
+        type: "single_line_text_field",
+        value: w.matrix.cm,
+      });
+    }
     if (w.matrix.jpMm !== null) {
       metafieldWrites.push({
         ownerId: w.variantId,

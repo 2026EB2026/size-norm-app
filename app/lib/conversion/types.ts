@@ -115,8 +115,11 @@ export interface NormalizedLabel {
 }
 
 /**
- * Result of {@link lookupConversion}. The matrix is the four-column conversion
- * for use on variant metafield `size_norm.matrix`. `fromBrandSpecific` lets the
+ * Result of {@link lookupConversion}. The matrix is the five-column conversion
+ * for use on variant metafield `size_norm.matrix`. `cm` is foot length in
+ * centimetres as a string (preserves `.5` increments and ranges like `22-23`
+ * from brand data); `jpMm` is the same value normalized to integer
+ * millimetres (Japanese mondopoint convention). `fromBrandSpecific` lets the
  * caller report which path was taken (useful for analytics + debugging).
  */
 export interface ConversionResult {
@@ -124,6 +127,7 @@ export interface ConversionResult {
     us: string | null;
     eu: string | null;
     uk: string | null;
+    cm: string | null;
     jpMm: number | null;
   };
   sourceLabel: string;

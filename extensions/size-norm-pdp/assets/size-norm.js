@@ -59,6 +59,7 @@ class SizeNormTable extends HTMLElement {
       us: this.dataset.labelUs ?? "US",
       eu: this.dataset.labelEu ?? "EU",
       uk: this.dataset.labelUk ?? "UK",
+      cm: this.dataset.labelCm ?? "CM",
       jp: this.dataset.labelJp ?? "JP-mm",
       sourceLabel: this.dataset.labelSource ?? "Tag",
       showAll: this.dataset.labelShowAll ?? "Show full conversion",
@@ -139,6 +140,8 @@ class SizeNormTable extends HTMLElement {
         return { label: this._labels.us, value: matrix.us };
       case "UK":
         return { label: this._labels.uk, value: matrix.uk };
+      case "CM":
+        return { label: this._labels.cm, value: matrix.cm };
       case "JP_MM":
         return { label: this._labels.jp, value: matrix.jpMm };
       default:
@@ -156,6 +159,7 @@ class SizeNormTable extends HTMLElement {
     const us = this._displayValue(matrix.us);
     const eu = this._displayValue(matrix.eu);
     const uk = this._displayValue(matrix.uk);
+    const cm = this._displayValue(matrix.cm);
     const jp = this._displayValue(matrix.jpMm);
     const source = sourceLabel ?? "";
 
@@ -177,7 +181,7 @@ class SizeNormTable extends HTMLElement {
             <th>${this._escape(this._labels.us)}</th>
             <th>${this._escape(this._labels.eu)}</th>
             <th>${this._escape(this._labels.uk)}</th>
-            <th>${this._escape(this._labels.jp)}</th>
+            <th>${this._escape(this._labels.cm)}</th>
           </tr>
         </thead>
         <tbody>
@@ -185,7 +189,7 @@ class SizeNormTable extends HTMLElement {
             <td>${this._escape(us)}</td>
             <td>${this._escape(eu)}</td>
             <td>${this._escape(uk)}</td>
-            <td>${this._escape(jp)}</td>
+            <td>${this._escape(cm)}</td>
           </tr>
         </tbody>
       </table>`;

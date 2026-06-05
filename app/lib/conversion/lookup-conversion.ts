@@ -44,6 +44,7 @@ export function lookupConversion(
             us: mapping.us,
             eu: mapping.eu,
             uk: mapping.uk,
+            cm: mapping.cm ?? null,
             jpMm: mapping.jpMm,
           },
           sourceLabel: normalizedLabel,

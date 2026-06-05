@@ -5,19 +5,24 @@
   variant change.
 
   Inputs:
-    - matrix: object with keys us, eu, uk, jpMm (any can be null)
+    - matrix: object with keys us, eu, uk, cm, jpMm (any can be null)
     - source_label: the original variant option text (e.g. "41½")
     - display_mode: SINGLE_SCALE | FULL_TABLE | MAIN_PLUS_TABLE
     - fraction_format: UNICODE | DECIMAL | ASCII (passed through to JS via
       the parent element; this snippet just renders the matrix values as-is
       since the metafield already stores them in the merchant's chosen form)
-    - default_scale: US | EU | UK | JP_MM — primary scale to highlight
+    - default_scale: US | EU | UK | CM | JP_MM — primary scale to highlight
+
+  Default 4-column display: US | EU | UK | CM. JP-mm is metafield-only
+  (still stored on variant for API consumers) — Italian-luxury retail uses
+  CM, not Japanese mondopoint, for the "physical length" axis.
 {%- endcomment -%}
 
 {%- liquid
   assign m_us = matrix.us
   assign m_eu = matrix.eu
   assign m_uk = matrix.uk
+  assign m_cm = matrix.cm
   assign m_jp = matrix.jpMm
 
   case default_scale
@@ -27,6 +32,9 @@
     when 'UK'
       assign main_label = 'block.scale_uk' | t
       assign main_value = m_uk
+    when 'CM'
+      assign main_label = 'block.scale_cm' | t
+      assign main_value = m_cm
     when 'JP_MM'
       assign main_label = 'block.scale_jp' | t
       assign main_value = m_jp
@@ -53,7 +61,7 @@
         <th>{{ 'block.scale_us' | t }}</th>
         <th>{{ 'block.scale_eu' | t }}</th>
         <th>{{ 'block.scale_uk' | t }}</th>
-        <th>{{ 'block.scale_jp' | t }}</th>
+        <th>{{ 'block.scale_cm' | t }}</th>
       </tr>
     </thead>
     <tbody>
@@ -61,7 +69,7 @@
         <td>{{ m_us | default: '—' }}</td>
         <td>{{ m_eu | default: '—' }}</td>
         <td>{{ m_uk | default: '—' }}</td>
-        <td>{{ m_jp | default: '—' }}</td>
+        <td>{{ m_cm | default: '—' }}</td>
       </tr>
     </tbody>
   </table>
@@ -83,7 +91,7 @@
           <th>{{ 'block.scale_us' | t }}</th>
           <th>{{ 'block.scale_eu' | t }}</th>
           <th>{{ 'block.scale_uk' | t }}</th>
-          <th>{{ 'block.scale_jp' | t }}</th>
+          <th>{{ 'block.scale_cm' | t }}</th>
         </tr>
       </thead>
       <tbody>
@@ -91,7 +99,7 @@
           <td>{{ m_us | default: '—' }}</td>
           <td>{{ m_eu | default: '—' }}</td>
           <td>{{ m_uk | default: '—' }}</td>
-          <td>{{ m_jp | default: '—' }}</td>
+          <td>{{ m_cm | default: '—' }}</td>
         </tr>
       </tbody>
     </table>

@@ -323,6 +323,15 @@ export const METAFIELD_DEFINITIONS = [
     ownerType: "PRODUCTVARIANT" as const,
   },
   {
+    name: "Size Norm — CM",
+    namespace: "size_norm",
+    key: "cm",
+    description:
+      "Foot length in centimetres (preserves .5 increments and brand ranges).",
+    type: "single_line_text_field",
+    ownerType: "PRODUCTVARIANT" as const,
+  },
+  {
     name: "Size Norm — JP mondopoint (mm)",
     namespace: "size_norm",
     key: "jp_mm",
