@@ -98,12 +98,20 @@ def build_mapping(row, col_map, source_col, source_scale, gender):
     elif source_scale == "MW_COMBINED":
         m["us"] = source_label
 
-    for k, col_idx in col_map.items():
-        if col_idx == source_col:
-            continue
-        v = normalize_value(row[col_idx])
-        if v is not None:
-            m[k] = v
+    # col_map values can be either a single column index or a list of candidate
+    # columns (tried in order — first non-null wins). Multi-candidate lets us
+    # fall back to a general column when the gender-specific one is empty —
+    # e.g. CM W (col 26) → CM general (col 28) for brands that put CM in the
+    # unisex column only (ASICS, HOKA, FERRAGAMO).
+    for k, col_indices in col_map.items():
+        candidates = col_indices if isinstance(col_indices, list) else [col_indices]
+        for col_idx in candidates:
+            if col_idx == source_col:
+                continue
+            v = normalize_value(row[col_idx])
+            if v is not None:
+                m[k] = v
+                break
 
     # For MW_COMBINED, derive canonical `eu` and `uk` from the men's side
     # if the split fields are present.
@@ -257,32 +265,33 @@ def process_brand(brand, brand_block):
 
     # ADULT block — smart M/W split
     if has_us_w and has_us_m:
-        # Determine source EU col for each gender
         eu_w_src = 4 if has_eu_w else 3
         eu_m_src = 5 if has_eu_m else 3
         out.append(build_scale(
             brand, "women", "adult", "simple", "EU", brand_block,
             source_col=eu_w_src,
-            col_map={"us": 10, "uk": 8, "cm": 26, "jp": 15, "fr": 6},
+            # cm: try CM W (gender-specific), fall back to CM (general).
+            # jp: try JPN W, fall back to JPN.
+            col_map={"us": 10, "uk": 8, "cm": [26, 28], "jp": [15, 13], "fr": 6},
             valid_filter_col=10,
         ))
         out.append(build_scale(
             brand, "men", "adult", "simple", "EU", brand_block,
             source_col=eu_m_src,
-            col_map={"us": 11, "uk": 9, "cm": 27, "jp": 14, "fr": 6},
+            col_map={"us": 11, "uk": 9, "cm": [27, 28], "jp": [14, 13], "fr": 6},
             valid_filter_col=11,
         ))
     elif has_us_w or has_eu_w:
         out.append(build_scale(
             brand, "women", "adult", "simple", "EU", brand_block,
             source_col=4 if has_eu_w else 3,
-            col_map={"us": 10, "uk": 8, "cm": 26, "jp": 15, "fr": 6},
+            col_map={"us": 10, "uk": 8, "cm": [26, 28], "jp": [15, 13], "fr": 6},
         ))
     elif has_us_m or has_eu_m:
         out.append(build_scale(
             brand, "men", "adult", "simple", "EU", brand_block,
             source_col=5 if has_eu_m else 3,
-            col_map={"us": 11, "uk": 9, "cm": 27, "jp": 14, "fr": 6},
+            col_map={"us": 11, "uk": 9, "cm": [27, 28], "jp": [14, 13], "fr": 6},
         ))
     elif has_us_uni or has_eu:
         out.append(build_scale(
