@@ -31,6 +31,7 @@ export function computeProductHash(product: ShopifyProduct): string {
     productType: product.productType ?? "",
     gender: product.gender ?? "",
     scaleSigla: product.scaleSigla ?? "",
+    ageCategory: product.ageCategory ?? "",
     variants: product.variants
       .map((v) => ({
         id: v.id,

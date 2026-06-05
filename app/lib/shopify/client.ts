@@ -43,6 +43,13 @@ export interface ShopifyProduct {
   gender: string | null;
   /** product metafield `size_norm.scale_sigla` value, or null when missing. */
   scaleSigla: string | null;
+  /**
+   * Product metafield `size_norm.age_category` value, or null when missing.
+   * Used by the processor to auto-derive a brand-official scale sigla for
+   * kid products (defaults to "adult" when null). Optional — only needed
+   * when the merchant uses brand-official scales.
+   */
+  ageCategory: string | null;
   variants: ShopifyProductVariant[];
 }
 
@@ -70,6 +77,7 @@ export async function getProductForProcessing(
         tags: string[];
         gender: { value: string } | null;
         scaleSigla: { value: string } | null;
+        ageCategory: { value: string } | null;
         variants: { nodes: ShopifyProductVariant[] };
       };
     };
@@ -98,6 +106,7 @@ export async function getProductForProcessing(
     tags: p.tags,
     gender: p.gender?.value ?? null,
     scaleSigla: p.scaleSigla?.value ?? null,
+    ageCategory: p.ageCategory?.value ?? null,
     variants: p.variants.nodes,
   };
 }
@@ -261,7 +270,17 @@ export const METAFIELD_DEFINITIONS = [
     name: "Size Norm — Scale sigla",
     namespace: "size_norm",
     key: "scale_sigla",
-    description: "Sigla of the Atelier scale this product uses (e.g. #G, DD).",
+    description:
+      "Manual override of the scale to use. Leave empty for auto-derivation from vendor + gender + age_category (e.g. asics-men-adult).",
+    type: "single_line_text_field",
+    ownerType: "PRODUCT" as const,
+  },
+  {
+    name: "Size Norm — Age category",
+    namespace: "size_norm",
+    key: "age_category",
+    description:
+      "adult | crib | infant | toddler | pre-school | youth | grade-school | junior | big-kids. Defaults to 'adult' when empty.",
     type: "single_line_text_field",
     ownerType: "PRODUCT" as const,
   },

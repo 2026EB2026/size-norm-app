@@ -19,6 +19,9 @@ export const GET_PRODUCT_FOR_PROCESSING = `#graphql
       scaleSigla: metafield(namespace: "size_norm", key: "scale_sigla") {
         value
       }
+      ageCategory: metafield(namespace: "size_norm", key: "age_category") {
+        value
+      }
       variants(first: 100) {
         nodes {
           id

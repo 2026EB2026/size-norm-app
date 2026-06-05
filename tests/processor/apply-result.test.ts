@@ -41,6 +41,7 @@ describe("computeProductHash", () => {
       tags: ["a"],
       gender: "men",
       scaleSigla: "G",
+      ageCategory: null,
       variants: [
         {
           id: "gid://shopify/ProductVariant/10",

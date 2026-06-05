@@ -35,6 +35,11 @@ export {
 } from "./conversion-tables-seed";
 
 export {
+  BRAND_SCALES_V1,
+  BRAND_CONVERSION_TABLES_V1,
+} from "./brand-scales-seed";
+
+export {
   MEN_MASTER,
   WOMEN_MASTER,
   KID_MASTER,

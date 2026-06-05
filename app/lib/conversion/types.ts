@@ -51,6 +51,12 @@ export interface SizeScale {
 /**
  * One row in a conversion table: maps a source label to the four canonical
  * columns. Any column may be `null` if no equivalent exists at that size point.
+ *
+ * Extended optional fields are used by brand-official scales that carry
+ * additional regional/gender data (e.g. CM mondopoint as string, French
+ * sizing, M/W gender-split for unisex scales). The PDP rendering layer can
+ * pick these up; the core processor only consumes the canonical 4 fields
+ * (us, eu, uk, jpMm).
  */
 export interface ConversionMapping {
   sourceLabel: string;
@@ -59,6 +65,26 @@ export interface ConversionMapping {
   uk: string | null;
   /** JP mondopoint in millimeters, always an integer. */
   jpMm: number | null;
+  /** French sizing where it differs from EU (e.g. some adult fashion brands). */
+  fr?: string | null;
+  /** Centimeter measurement as merchant-provided (may include / for ranges). */
+  cm?: string | null;
+  /** JP cm (e.g. "25.5") — string form to preserve `.5` increments. */
+  jp?: string | null;
+  /** Korean MP. */
+  kr?: string | null;
+  /** Gender-split US values (used in M/W combined unisex scales). */
+  usM?: string | null;
+  usW?: string | null;
+  /** Gender-split EU values. */
+  euM?: string | null;
+  euW?: string | null;
+  /** Gender-split UK values. */
+  ukM?: string | null;
+  ukW?: string | null;
+  /** Gender-split CM values. */
+  cmM?: string | null;
+  cmW?: string | null;
 }
 
 /**
