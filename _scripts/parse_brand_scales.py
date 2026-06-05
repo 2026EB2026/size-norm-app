@@ -79,28 +79,130 @@ def col_filled(block, col):
     return block[col].notna().any()
 
 
-def build_mapping(row, col_map, source_col, source_scale):
+def build_mapping(row, col_map, source_col, source_scale, gender):
     source_label = normalize_value(row[source_col])
     if source_label is None:
         return None
     m = {"sourceLabel": source_label}
-    if source_scale == "MW_COMBINED":
+
+    # Always populate the source-scale field with sourceLabel — that's the
+    # whole point of source-scale: the canonical value the scale's labels
+    # are expressed in. For EU-source scales, mapping.eu = sourceLabel; for
+    # US-source, mapping.us = sourceLabel; for UK-source, mapping.uk; etc.
+    if source_scale == "EU":
+        m["eu"] = source_label
+    elif source_scale == "US":
         m["us"] = source_label
+    elif source_scale == "UK":
+        m["uk"] = source_label
+    elif source_scale == "MW_COMBINED":
+        m["us"] = source_label
+
     for k, col_idx in col_map.items():
         if col_idx == source_col:
             continue
         v = normalize_value(row[col_idx])
         if v is not None:
             m[k] = v
+
     # For MW_COMBINED, derive canonical `eu` and `uk` from the men's side
-    # if the split fields are present. This keeps the canonical 4-col matrix
-    # populated; the women's side is still available via euW/ukW for the PDP.
+    # if the split fields are present.
     if source_scale == "MW_COMBINED":
         if "eu" not in m and "eu_m" in m:
             m["eu"] = m["eu_m"]
         if "uk" not in m and "uk_m" in m:
             m["uk"] = m["uk_m"]
+
+    # Backfill missing us/eu/uk/cm using the master tables. Uses gender to
+    # pick MEN or WOMEN master (kid scales aren't backfilled — too varied).
+    backfill_from_master(m, gender)
+
     return m
+
+
+# ── Master tables (mirrors app/lib/conversion/master-tables.ts) ────────
+# Used to backfill missing us/eu/uk/cm in brand mappings when the xlsx
+# leaves columns blank.
+
+MEN_MASTER = [
+    {"us": "4", "eu": "36", "uk": "3", "cm": "22.5"},
+    {"us": "4.5", "eu": "36.5", "uk": "3.5", "cm": "22.8"},
+    {"us": "5", "eu": "37", "uk": "4", "cm": "23.0"},
+    {"us": "5.5", "eu": "37.5", "uk": "4.5", "cm": "23.3"},
+    {"us": "6", "eu": "38", "uk": "5", "cm": "23.5"},
+    {"us": "6.5", "eu": "38.5", "uk": "5.5", "cm": "23.8"},
+    {"us": "7", "eu": "39", "uk": "6", "cm": "24.0"},
+    {"us": "7.5", "eu": "39.5", "uk": "6.5", "cm": "24.3"},
+    {"us": "8", "eu": "40", "uk": "7", "cm": "24.5"},
+    {"us": "8.5", "eu": "40.5", "uk": "7.5", "cm": "24.8"},
+    {"us": "9", "eu": "41", "uk": "8", "cm": "25.0"},
+    {"us": "9.5", "eu": "41.5", "uk": "8.5", "cm": "25.3"},
+    {"us": "10", "eu": "42", "uk": "9", "cm": "25.5"},
+    {"us": "10.5", "eu": "42.5", "uk": "9.5", "cm": "25.8"},
+    {"us": "11", "eu": "43", "uk": "10", "cm": "26.0"},
+    {"us": "11.5", "eu": "43.5", "uk": "10.5", "cm": "26.3"},
+    {"us": "12", "eu": "44", "uk": "11", "cm": "26.5"},
+    {"us": "12.5", "eu": "44.5", "uk": "11.5", "cm": "26.8"},
+    {"us": "13", "eu": "45", "uk": "12", "cm": "27.0"},
+    {"us": "13.5", "eu": "45.5", "uk": "12.5", "cm": "27.3"},
+    {"us": "14", "eu": "46", "uk": "13", "cm": "27.5"},
+    {"us": "14.5", "eu": "46.5", "uk": "13.5", "cm": "27.8"},
+    {"us": "15", "eu": "47", "uk": "14", "cm": "28.0"},
+]
+
+WOMEN_MASTER = [
+    {"us": "3.5", "eu": "34", "uk": "1.5", "cm": "21.5"},
+    {"us": "4", "eu": "34.5", "uk": "2", "cm": "21.8"},
+    {"us": "4.5", "eu": "35", "uk": "2.5", "cm": "22.0"},
+    {"us": "5", "eu": "35.5", "uk": "3", "cm": "22.3"},
+    {"us": "5.5", "eu": "36", "uk": "3.5", "cm": "22.5"},
+    {"us": "6", "eu": "36.5", "uk": "4", "cm": "22.8"},
+    {"us": "6.5", "eu": "37", "uk": "4.5", "cm": "23.0"},
+    {"us": "7", "eu": "37.5", "uk": "5", "cm": "23.3"},
+    {"us": "7.5", "eu": "38", "uk": "5.5", "cm": "23.5"},
+    {"us": "8", "eu": "38.5", "uk": "6", "cm": "23.8"},
+    {"us": "8.5", "eu": "39", "uk": "6.5", "cm": "24.0"},
+    {"us": "9", "eu": "39.5", "uk": "7", "cm": "24.3"},
+    {"us": "9.5", "eu": "40", "uk": "7.5", "cm": "24.5"},
+    {"us": "10", "eu": "40.5", "uk": "8", "cm": "24.8"},
+    {"us": "10.5", "eu": "41", "uk": "8.5", "cm": "25.0"},
+    {"us": "11", "eu": "41.5", "uk": "9", "cm": "25.3"},
+    {"us": "11.5", "eu": "42", "uk": "9.5", "cm": "25.5"},
+]
+
+
+def backfill_from_master(m, gender):
+    """Fill missing us/eu/uk/cm fields in mapping by matching the master
+    table for the given gender. Uses whichever value IS present as the
+    anchor key. Does nothing for kid/unisex scales (too varied to fit
+    one master table)."""
+    if gender == "men":
+        master = MEN_MASTER
+    elif gender == "women":
+        master = WOMEN_MASTER
+    else:
+        return  # kid / unisex / mw_combined — skip
+
+    # Pick an anchor: prefer eu, then us, then uk
+    anchor_key = None
+    anchor_value = None
+    for k in ["eu", "us", "uk"]:
+        if k in m and m[k] is not None:
+            anchor_key = k
+            anchor_value = m[k]
+            break
+    if anchor_key is None:
+        return
+
+    # Find the master row matching the anchor
+    row = next((r for r in master if r[anchor_key] == anchor_value), None)
+    if row is None:
+        return
+
+    # Fill missing fields
+    for k in ["us", "eu", "uk", "cm"]:
+        if k not in m and k in row:
+            m[k] = row[k]
 
 
 def build_scale(brand, gender, age, mode, source_scale, brand_block,
@@ -118,7 +220,7 @@ def build_scale(brand, gender, age, mode, source_scale, brand_block,
         if label is None:
             continue
         labels.append(label)
-        m = build_mapping(row, col_map, source_col, source_scale)
+        m = build_mapping(row, col_map, source_col, source_scale, gender)
         if m is not None:
             mappings.append(m)
 

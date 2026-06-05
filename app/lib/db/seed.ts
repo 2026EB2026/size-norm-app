@@ -74,7 +74,17 @@ async function upsertScale(
       brand: null,
     },
   });
-  if (existing !== null) return;
+  if (existing !== null) {
+    // If the merchant has marked the table as validated (isSeed=false), keep
+    // their data — they own it. If it's still a seed, refresh the mappings
+    // so bug fixes in our seed data propagate to existing shops.
+    if (!existing.isSeed) return;
+    await tx.conversionTable.update({
+      where: { id: existing.id },
+      data: { mappings: table.mappings as never },
+    });
+    return;
+  }
   await tx.conversionTable.create({
     data: {
       shopDomain,
