@@ -50,7 +50,7 @@ const metafieldDefsEnsuredInProcess = new Set<string>();
  * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
  * scales seed or its CM-overrides companion file.
  */
-const BRAND_SEED_REVISION = "v2-cm-overrides";
+const BRAND_SEED_REVISION = "v3-cross-scale-aliases";
 const brandScalesSeededInProcess = new Set<string>();
 
 /**
@@ -74,6 +74,67 @@ function applyCmOverrides(
 }
 
 /**
+ * Enriches the scale's `aliases` map so that variant labels in any of the
+ * canonical column systems (US/EU/UK/CM/JP-mm) resolve to the scale's
+ * native `sourceLabel`. This lets a product whose variants are labelled
+ * "39, 40, 41" (EU) still process correctly even when the assigned scale
+ * was uploaded with US sourceLabels — `parseLabel` will see "39" in the
+ * aliases map and return the canonical US sourceLabel for `lookupConversion`.
+ *
+ * The merge is conservative: existing aliases from the seed always win
+ * over auto-derived ones. We only fill in keys that aren't already
+ * present, and only when the column value differs from the sourceLabel
+ * itself (no point aliasing "9" → "9").
+ */
+function enrichAliasesFromTable(
+  baseAliases: Record<string, string>,
+  mappings: ConversionMapping[],
+): Record<string, string> {
+  const aliases: Record<string, string> = { ...baseAliases };
+  // Pre-build a Set of existing alias keys (lowercased) so we don't
+  // double-add and don't overwrite manually-curated entries.
+  const existing = new Set(Object.keys(aliases).map((k) => k.toLowerCase()));
+
+  const addAlias = (
+    key: string | number | null | undefined,
+    canonical: string,
+  ): void => {
+    if (key === null || key === undefined) return;
+    const k = String(key).trim();
+    if (k.length === 0 || k === canonical) return;
+    const kLower = k.toLowerCase();
+    if (existing.has(kLower)) return;
+    aliases[k] = canonical;
+    existing.add(kLower);
+  };
+
+  for (const m of mappings) {
+    const canonical = m.sourceLabel;
+    addAlias(m.us, canonical);
+    addAlias(m.eu, canonical);
+    addAlias(m.uk, canonical);
+    addAlias(m.cm, canonical);
+    addAlias(m.jpMm, canonical);
+    // Extended columns from the parser (fr, jp, kr, gender-specific
+    // variants) also count — a variant labelled with a Japanese mondopoint
+    // cm value (e.g. "240") or a French Paris-point should still match.
+    addAlias(m.fr, canonical);
+    addAlias(m.jp, canonical);
+    addAlias(m.kr, canonical);
+    addAlias(m.usM, canonical);
+    addAlias(m.usW, canonical);
+    addAlias(m.euM, canonical);
+    addAlias(m.euW, canonical);
+    addAlias(m.ukM, canonical);
+    addAlias(m.ukW, canonical);
+    addAlias(m.cmM, canonical);
+    addAlias(m.cmW, canonical);
+  }
+
+  return aliases;
+}
+
+/**
  * Upserts a single scale + (optionally) its generic conversion table for one
  * shop. Used for both ATELIER and BRAND scales.
  */
@@ -83,6 +144,15 @@ async function upsertScale(
   scale: SizeScale,
   table: ConversionTable | null,
 ): Promise<void> {
+  // Auto-derive cross-scale aliases from the conversion table so that
+  // variants labelled in US/EU/UK/CM (any column) resolve to the scale's
+  // native sourceLabel during processing. Seed-provided aliases always
+  // win — the enrichment only fills in keys that aren't already present.
+  const enrichedAliases =
+    table === null
+      ? scale.aliases
+      : enrichAliasesFromTable(scale.aliases, table.mappings);
+
   await tx.sizeScale.upsert({
     where: { shopDomain_sigla: { shopDomain, sigla: scale.sigla } },
     create: {
@@ -92,9 +162,13 @@ async function upsertScale(
       gender: toPrismaGender(scale.gender),
       sourceScale: toPrismaSourceScale(scale.sourceScale),
       labels: scale.labels,
-      aliases: scale.aliases,
+      aliases: enrichedAliases,
     },
-    update: {},
+    // Refresh aliases on every seed run so newly-added auto-aliases reach
+    // existing shops without requiring uninstall. We never touch other
+    // fields here because the merchant may have edited the scale rows
+    // (e.g. added a label to `labels[]`) and we don't want to clobber.
+    update: { aliases: enrichedAliases },
   });
 
   if (table === null) return;
