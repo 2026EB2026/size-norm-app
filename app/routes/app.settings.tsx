@@ -8,7 +8,9 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
+import { BRAND_SCALES_V1 } from "../lib/conversion";
 import {
+  parseBrandDisplayScales,
   parseMarketScales,
   settingsFormSchema,
 } from "../lib/validators/settings";
@@ -23,6 +25,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw new Response("Shop record not found", { status: 500 });
   }
 
+  // Collect the distinct brand slugs from BRAND_SCALES_V1 so the merchant
+  // can see which brand keys our processor recognizes (sigla format is
+  // `{brand-slug}-{gender}-{age}`; the slug is the first segment).
+  const knownBrandSlugs = Array.from(
+    new Set(
+      BRAND_SCALES_V1.map((s) => s.sigla.split("-")[0]).filter(
+        (s): s is string => typeof s === "string" && s.length > 0,
+      ),
+    ),
+  ).sort();
+
   return {
     settings: {
       globalDisplayMode: shop.globalDisplayMode,
@@ -32,7 +45,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         shop.marketScales !== null
           ? JSON.stringify(shop.marketScales, null, 2)
           : "",
+      brandDisplayScalesJson:
+        shop.brandDisplayScales !== null
+          ? JSON.stringify(shop.brandDisplayScales, null, 2)
+          : "",
     },
+    knownBrandSlugs,
   };
 };
 
@@ -45,6 +63,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     globalScale: formData.get("globalScale"),
     fractionFormat: formData.get("fractionFormat"),
     marketScalesJson: formData.get("marketScalesJson") ?? "",
+    brandDisplayScalesJson: formData.get("brandDisplayScalesJson") ?? "",
   });
   if (parsed.success === false) {
     return { errors: parsed.error.flatten().fieldErrors };
@@ -63,6 +82,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     };
   }
 
+  let brandDisplayScales: Record<string, string> | null;
+  try {
+    brandDisplayScales = parseBrandDisplayScales(
+      parsed.data.brandDisplayScalesJson,
+    );
+  } catch (e) {
+    return {
+      errors: {
+        brandDisplayScalesJson: [
+          e instanceof Error
+            ? e.message
+            : "Errore parsing brand display scales",
+        ],
+      },
+    };
+  }
+
   await prisma.shop.update({
     where: { shopDomain: session.shop },
     data: {
@@ -70,6 +106,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       globalScale: parsed.data.globalScale,
       fractionFormat: parsed.data.fractionFormat,
       marketScales: marketScales as never,
+      brandDisplayScales: brandDisplayScales as never,
     },
   });
 
@@ -82,7 +119,7 @@ type ActionData = {
 };
 
 export default function Settings() {
-  const { settings } = useLoaderData<typeof loader>();
+  const { settings, knownBrandSlugs } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>() as ActionData | undefined;
   const errors = actionData?.errors;
 
@@ -157,6 +194,27 @@ export default function Settings() {
                 &quot;UK&quot;, &quot;US&quot;: &quot;US&quot;, &quot;JP&quot;:
                 &quot;JP_MM&quot;&#125;. Lascia vuoto per usare ovunque la scala
                 globale.
+              </s-text>
+            </s-paragraph>
+
+            <s-text-area
+              name="brandDisplayScalesJson"
+              label="Scala principale per brand (JSON)"
+              rows={8}
+              defaultValue={settings.brandDisplayScalesJson}
+              error={errors?.brandDisplayScalesJson?.[0]}
+            />
+            <s-paragraph>
+              <s-text>
+                Override della scala principale mostrata sulla PDP per ogni
+                brand. Esempio:{" "}
+                &#123;&quot;asics&quot;: &quot;EU&quot;,
+                &quot;vans&quot;: &quot;US&quot;,
+                &quot;hoka&quot;: &quot;EU&quot;&#125;. Le chiavi sono lo
+                slug del brand (minuscolo + trattini). Brand non presenti
+                usano il default impostato sul block del theme. Brand
+                riconosciuti dall&apos;app:{" "}
+                {knownBrandSlugs.join(", ")}.
               </s-text>
             </s-paragraph>
 

@@ -30,6 +30,14 @@ model Shop {
   // US: "US", JP: "JP_MM" }. When a market is missing from this map, the
   // PDP falls back to globalScale.
   marketScales      Json?
+  // JSON shape: Record<brand-slug, SourceScale> — e.g. { "asics": "EU",
+  // "vans": "EU", "hoka": "US" }. Lets the merchant override the PDP "main"
+  // scale per brand: the processor writes the resolved choice to the
+  // product-level `size_norm.display_scale` metafield, which the theme
+  // extension reads with fallback to the block's default_scale setting.
+  // Brand keys are lowercased + trimmed to match the slug convention used
+  // by the processor's auto-derive (`slugifyBrand`).
+  brandDisplayScales Json?
   fractionFormat    FractionFormat @default(UNICODE)
 
   sizeScales        SizeScale[]

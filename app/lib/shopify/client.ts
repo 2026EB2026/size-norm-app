@@ -322,6 +322,15 @@ export const METAFIELD_DEFINITIONS = [
     type: "date_time",
     ownerType: "PRODUCT" as const,
   },
+  {
+    name: "Size Norm — Display scale",
+    namespace: "size_norm",
+    key: "display_scale",
+    description:
+      "Per-product override for the PDP \"main\" scale: US|EU|UK|CM|JP_MM. Set by the processor from the per-brand rules in app settings; falls back to the block's default_scale when empty.",
+    type: "single_line_text_field",
+    ownerType: "PRODUCT" as const,
+  },
   // Variant-level (one row per scale column)
   {
     name: "Size Norm — US",

@@ -17,6 +17,15 @@
   assign default_scale = block.settings.default_scale | default: 'EU'
   assign show_fit_notes = block.settings.show_fit_notes
 
+  # Per-brand display-scale override: the processor writes the merchant's
+  # configured scale for this product's vendor into the product metafield
+  # `size_norm.display_scale`. When non-empty, it wins over the block's
+  # default_scale setting. Empty → fall back to the block default.
+  assign brand_scale = product.metafields.size_norm.display_scale.value | strip
+  if brand_scale != blank
+    assign default_scale = brand_scale
+  endif
+
   assign current_variant = product.selected_or_first_available_variant
   assign current_matrix = current_variant.metafields.size_norm.matrix.value
   assign current_source = current_variant.metafields.size_norm.source_label.value

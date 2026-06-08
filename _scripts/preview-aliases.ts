@@ -22,11 +22,13 @@ if (scale === undefined || table === undefined) {
   process.exit(1);
 }
 
+const tableMappings = table.mappings;
+
 // Inline copy of enrichAliasesFromTable so this script doesn't reach into
 // db/seed.ts (which imports prisma at module-load time).
 function enrich(
   base: Record<string, string>,
-  mappings: typeof table.mappings,
+  mappings: typeof tableMappings,
 ): Record<string, string> {
   const aliases: Record<string, string> = { ...base };
   const existing = new Set(Object.keys(aliases).map((k) => k.toLowerCase()));

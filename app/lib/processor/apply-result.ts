@@ -22,6 +22,46 @@ import {
 } from "./process-product";
 
 /**
+ * Slugifies a vendor string to match the convention used by the per-brand
+ * settings UI (lowercase, dashes, trimmed). Keep in sync with
+ * `app/lib/processor/index.ts:slugifyBrand`.
+ */
+function slugifyBrand(vendor: string): string {
+  return vendor
+    .toLowerCase()
+    .trim()
+    .replace(/\s+kids$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Looks up the merchant's per-brand display-scale rule for the given
+ * vendor. Returns the SourceScale value as a string (e.g. "EU"), or the
+ * empty string when no rule is set — the theme extension treats the
+ * empty string as "fall back to the block's default_scale".
+ */
+export async function resolveBrandDisplayScale(
+  prisma: PrismaClient,
+  shopDomain: string,
+  vendor: string | null,
+): Promise<string> {
+  if (vendor === null || vendor.trim().length === 0) return "";
+  const brand = slugifyBrand(vendor);
+  if (brand.length === 0) return "";
+  const shop = await prisma.shop.findUnique({
+    where: { shopDomain },
+    select: { brandDisplayScales: true },
+  });
+  if (shop === null) return "";
+  const map = shop.brandDisplayScales as Record<string, unknown> | null;
+  if (map === null) return "";
+  const value = map[brand];
+  if (typeof value !== "string" || value.trim().length === 0) return "";
+  return value.trim();
+}
+
+/**
  * Builds a SHA-256 hash of the fields that the processor reads. Used by
  * `products/update` webhook to skip when nothing relevant changed.
  */
@@ -175,6 +215,26 @@ export async function applyProcessingResult(
       value: new Date().toISOString(),
     });
   }
+
+  // 2b. Per-brand display-scale override. If the merchant has configured a
+  //     display scale for this product's vendor in Shop.brandDisplayScales,
+  //     write it to the product metafield `size_norm.display_scale` so the
+  //     theme extension can pick it up at render time. We deliberately
+  //     write the metafield even if the brand isn't in the map — using the
+  //     empty string in that case — so previously-set values get cleared
+  //     when the merchant removes a brand rule.
+  const displayScaleValue = await resolveBrandDisplayScale(
+    prisma,
+    shopDomain,
+    product.vendor,
+  );
+  metafieldWrites.push({
+    ownerId: product.id,
+    namespace: "size_norm",
+    key: "display_scale",
+    type: "single_line_text_field",
+    value: displayScaleValue,
+  });
 
   // 3. Write metafields in one batch.
   if (metafieldWrites.length > 0) {
