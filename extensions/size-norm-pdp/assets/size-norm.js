@@ -137,15 +137,15 @@ class SizeNormTable extends HTMLElement {
   _mainValueFor(matrix, defaultScale) {
     switch (defaultScale) {
       case "US":
-        return { label: this._labels.us, value: matrix.us };
+        return { label: this._labels.us, value: matrix.us, col: "us" };
       case "UK":
-        return { label: this._labels.uk, value: matrix.uk };
+        return { label: this._labels.uk, value: matrix.uk, col: "uk" };
       case "CM":
-        return { label: this._labels.cm, value: matrix.cm };
+        return { label: this._labels.cm, value: matrix.cm, col: "cm" };
       case "JP_MM":
-        return { label: this._labels.jp, value: matrix.jpMm };
+        return { label: this._labels.jp, value: matrix.jpMm, col: "jp" };
       default:
-        return { label: this._labels.eu, value: matrix.eu };
+        return { label: this._labels.eu, value: matrix.eu, col: "eu" };
     }
   }
 
@@ -156,14 +156,6 @@ class SizeNormTable extends HTMLElement {
 
   _renderHtml(matrix, sourceLabel, mode, defaultScale) {
     const main = this._mainValueFor(matrix, defaultScale);
-    const us = this._displayValue(matrix.us);
-    const eu = this._displayValue(matrix.eu);
-    const uk = this._displayValue(matrix.uk);
-    const cm = this._displayValue(matrix.cm);
-    // JP mondopoint stored as int mm; render the raw integer (e.g. 240) to
-    // match what's persisted in the JSON metafield. CM column already
-    // carries the human-readable cm value.
-    const jp = this._displayValue(matrix.jpMm);
     const source = sourceLabel ?? "";
 
     if (mode === "SINGLE_SCALE") {
@@ -177,26 +169,33 @@ class SizeNormTable extends HTMLElement {
       </dl>`;
     }
 
+    // Column order mirrors the Liquid SSR template. JP mondopoint is the
+    // raw int mm (e.g. 240) to match the JSON metafield; CM carries the
+    // human-readable cm value. The merchant's main scale column gets the
+    // `is-main` class so the CSS can emphasize it.
+    const columns = [
+      { col: "us", label: this._labels.us, value: matrix.us },
+      { col: "eu", label: this._labels.eu, value: matrix.eu },
+      { col: "uk", label: this._labels.uk, value: matrix.uk },
+      { col: "cm", label: this._labels.cm, value: matrix.cm },
+      { col: "jp", label: this._labels.jp, value: matrix.jpMm },
+    ];
+    const ths = columns
+      .map(
+        (c) =>
+          `<th${c.col === main.col ? ' class="is-main"' : ""}>${this._escape(c.label)}</th>`,
+      )
+      .join("");
+    const tds = columns
+      .map(
+        (c) =>
+          `<td${c.col === main.col ? ' class="is-main"' : ""}>${this._escape(this._displayValue(c.value))}</td>`,
+      )
+      .join("");
     const tableHtml = `
       <table class="size-norm__table">
-        <thead>
-          <tr>
-            <th>${this._escape(this._labels.us)}</th>
-            <th>${this._escape(this._labels.eu)}</th>
-            <th>${this._escape(this._labels.uk)}</th>
-            <th>${this._escape(this._labels.cm)}</th>
-            <th>${this._escape(this._labels.jp)}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>${this._escape(us)}</td>
-            <td>${this._escape(eu)}</td>
-            <td>${this._escape(uk)}</td>
-            <td>${this._escape(cm)}</td>
-            <td>${this._escape(jp)}</td>
-          </tr>
-        </tbody>
+        <thead><tr>${ths}</tr></thead>
+        <tbody><tr>${tds}</tr></tbody>
       </table>`;
 
     if (mode === "FULL_TABLE") {

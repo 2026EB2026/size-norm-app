@@ -168,8 +168,30 @@ export default function BulkAdmin() {
   const actionData = useActionData<typeof action>() as ActionData | undefined;
   const errors = actionData?.errors;
 
+  const runningJob = jobs.find(
+    (j) => j.status === "RUNNING" || j.status === "PENDING",
+  );
+
   return (
     <s-page heading="Bulk re-scan">
+      {runningJob !== undefined && (
+        <s-banner
+          heading={`${TYPE_LABEL[runningJob.type] ?? runningJob.type} in corso`}
+          tone="info"
+        >
+          <s-stack direction="inline" gap="small">
+            <s-spinner size="base" accessibilityLabel="Job in esecuzione" />
+            <s-text>
+              {runningJob.processed} / {runningJob.total} prodotti processati
+              {runningJob.errors > 0
+                ? ` · ${runningJob.errors} errori`
+                : ""}{" "}
+              — aggiorna la pagina per lo stato più recente.
+            </s-text>
+          </s-stack>
+        </s-banner>
+      )}
+
       <s-section heading="Avvia un nuovo job">
         {errors?._form !== undefined && (
           <s-banner tone="critical">
@@ -177,75 +199,94 @@ export default function BulkAdmin() {
           </s-banner>
         )}
 
-        <s-stack direction="block" gap="large">
-          <s-section heading="Scansiona tutto il catalogo">
-            <s-paragraph>
-              Pagina tutti i prodotti footwear e ricalcola i metafield di
-              conversione. Usalo dopo aver caricato dati iniziali o cambiato la
-              configurazione globale.
-            </s-paragraph>
-            <Form method="post">
-              <input type="hidden" name="intent" value="full-rescan" />
-              <s-button type="submit" variant="primary">
-                Avvia re-scan completo
-              </s-button>
-            </Form>
-          </s-section>
-
-          <s-section heading="Reconvert per scala">
-            <s-paragraph>
-              Riprocessa solo i prodotti che usano una specifica scala. Utile
-              dopo aver modificato labels/aliases di una scala.
-            </s-paragraph>
-            <Form method="post">
-              <input type="hidden" name="intent" value="reconvert-by-scale" />
-              <s-stack direction="inline" gap="base">
-                <s-select
-                  name="scaleSigla"
-                  label="Scala"
-                  value={scales[0]?.sigla ?? ""}
-                  error={errors?.scaleSigla?.[0]}
-                >
-                  {scales.map((s) => (
-                    <s-option key={s.sigla} value={s.sigla}>
-                      {s.sigla} — {s.name}
-                    </s-option>
-                  ))}
-                </s-select>
-                <s-button type="submit" variant="primary">
-                  Reconvert
-                </s-button>
-              </s-stack>
-            </Form>
-          </s-section>
-
-          <s-section heading="Reconvert per brand">
-            <s-paragraph>
-              Riprocessa solo i prodotti del brand specificato. Utile dopo aver
-              creato/modificato una Conversion Table brand-specific.
-            </s-paragraph>
-            <Form method="post">
-              <input type="hidden" name="intent" value="reconvert-by-brand" />
-              <s-stack direction="inline" gap="base">
-                <s-text-field
-                  name="brand"
-                  label="Brand"
-                  error={errors?.brand?.[0]}
-                />
-                <s-button type="submit" variant="primary">
-                  Reconvert
-                </s-button>
-              </s-stack>
-            </Form>
-            {brands.length > 0 && (
-              <s-paragraph>
-                <s-text>
-                  Brand con Conversion Table specifica: {brands.join(", ")}
-                </s-text>
+        <s-grid
+          gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))"
+          gap="base"
+        >
+          <s-box padding="base" border="base" borderRadius="base">
+            <s-stack direction="block" gap="base">
+              <s-heading>Tutto il catalogo</s-heading>
+              <s-paragraph color="subdued">
+                Ricalcola i metafield di conversione per tutti i prodotti
+                footwear. Usalo dopo il primo setup o dopo aver cambiato la
+                configurazione globale.
               </s-paragraph>
-            )}
-          </s-section>
-        </s-stack>
+              <Form method="post">
+                <input type="hidden" name="intent" value="full-rescan" />
+                <s-button type="submit" variant="primary">
+                  Avvia re-scan completo
+                </s-button>
+              </Form>
+            </s-stack>
+          </s-box>
+
+          <s-box padding="base" border="base" borderRadius="base">
+            <s-stack direction="block" gap="base">
+              <s-heading>Per scala</s-heading>
+              <s-paragraph color="subdued">
+                Riprocessa solo i prodotti di una scala specifica. Utile dopo
+                aver modificato labels o aliases.
+              </s-paragraph>
+              <Form method="post">
+                <input
+                  type="hidden"
+                  name="intent"
+                  value="reconvert-by-scale"
+                />
+                <s-stack direction="block" gap="small">
+                  <s-select
+                    name="scaleSigla"
+                    label="Scala"
+                    value={scales[0]?.sigla ?? ""}
+                    error={errors?.scaleSigla?.[0]}
+                  >
+                    {scales.map((s) => (
+                      <s-option key={s.sigla} value={s.sigla}>
+                        {s.sigla} — {s.name}
+                      </s-option>
+                    ))}
+                  </s-select>
+                  <s-button type="submit" variant="secondary">
+                    Reconvert
+                  </s-button>
+                </s-stack>
+              </Form>
+            </s-stack>
+          </s-box>
+
+          <s-box padding="base" border="base" borderRadius="base">
+            <s-stack direction="block" gap="base">
+              <s-heading>Per brand</s-heading>
+              <s-paragraph color="subdued">
+                Riprocessa solo i prodotti del brand indicato. Utile dopo aver
+                creato o modificato una Conversion Table brand-specific.
+              </s-paragraph>
+              <Form method="post">
+                <input
+                  type="hidden"
+                  name="intent"
+                  value="reconvert-by-brand"
+                />
+                <s-stack direction="block" gap="small">
+                  <s-text-field
+                    name="brand"
+                    label="Brand"
+                    placeholder="es. Asics"
+                    error={errors?.brand?.[0]}
+                  />
+                  <s-button type="submit" variant="secondary">
+                    Reconvert
+                  </s-button>
+                </s-stack>
+              </Form>
+              {brands.length > 0 && (
+                <s-text color="subdued">
+                  Con tabella specifica: {brands.join(", ")}
+                </s-text>
+              )}
+            </s-stack>
+          </s-box>
+        </s-grid>
       </s-section>
 
       <s-section heading={`Ultimi ${jobs.length} job`}>
@@ -294,12 +335,6 @@ export default function BulkAdmin() {
           </s-table>
         )}
 
-        <s-paragraph>
-          <s-text>
-            Aggiorna la pagina per vedere lo stato avanzato dei job in
-            esecuzione. (Auto-refresh live verrà aggiunto in M7.)
-          </s-text>
-        </s-paragraph>
       </s-section>
     </s-page>
   );

@@ -63,15 +63,18 @@ export default function AlertsIndex() {
     <s-page heading="Alerts di conversione">
       <s-section heading="Sommario non risolti">
         {summary.length === 0 ? (
-          <s-paragraph>Nessun alert non risolto. 🎉</s-paragraph>
+          <s-banner tone="success" heading="Tutto in ordine">
+            <s-text>
+              Nessun alert aperto: tutte le conversioni sono andate a buon
+              fine.
+            </s-text>
+          </s-banner>
         ) : (
-          <s-stack direction="block" gap="small">
+          <s-stack direction="inline" gap="small">
             {summary.map((s) => (
-              <s-paragraph key={s.code}>
-                <s-text>
-                  {ERROR_CODE_LABEL[s.code] ?? s.code}: <s-text>{s.count}</s-text>
-                </s-text>
-              </s-paragraph>
+              <s-badge key={s.code} tone="critical">
+                {`${ERROR_CODE_LABEL[s.code] ?? s.code} · ${s.count}`}
+              </s-badge>
             ))}
           </s-stack>
         )}

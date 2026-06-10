@@ -9,13 +9,16 @@
     - source_label: the original variant option text (e.g. "41½")
     - display_mode: SINGLE_SCALE | FULL_TABLE | MAIN_PLUS_TABLE
     - fraction_format: UNICODE | DECIMAL | ASCII
-    - default_scale: US | EU | UK | CM | JP — primary scale to highlight
+    - default_scale: US | EU | UK | CM | JP_MM — primary scale to highlight
 
   Display columns (5): US | EU | UK | CM | JP. JP is shown as the raw
   Japanese mondopoint mm integer (e.g. 240) to match what's persisted in
   the JSON metafield. CM is the human-readable cm value (e.g. 24).
   Always render all columns even when individual values are null (shown as
   "—") so the matrix stays visually consistent across products.
+
+  The column matching default_scale gets the `is-main` class on its th/td
+  so the CSS can emphasize it (quiet wash + stronger figures).
 {%- endcomment -%}
 
 {%- liquid
@@ -29,20 +32,48 @@
     when 'US'
       assign main_label = 'block.scale_us' | t
       assign main_value = m_us
+      assign main_col = 'us'
     when 'UK'
       assign main_label = 'block.scale_uk' | t
       assign main_value = m_uk
+      assign main_col = 'uk'
     when 'CM'
       assign main_label = 'block.scale_cm' | t
       assign main_value = m_cm
+      assign main_col = 'cm'
     when 'JP_MM'
       assign main_label = 'block.scale_jp' | t
       assign main_value = m_jp
+      assign main_col = 'jp'
     else
       assign main_label = 'block.scale_eu' | t
       assign main_value = m_eu
+      assign main_col = 'eu'
   endcase
 -%}
+
+{%- capture conversion_table -%}
+  <table class="size-norm__table">
+    <thead>
+      <tr>
+        <th{% if main_col == 'us' %} class="is-main"{% endif %}>{{ 'block.scale_us' | t }}</th>
+        <th{% if main_col == 'eu' %} class="is-main"{% endif %}>{{ 'block.scale_eu' | t }}</th>
+        <th{% if main_col == 'uk' %} class="is-main"{% endif %}>{{ 'block.scale_uk' | t }}</th>
+        <th{% if main_col == 'cm' %} class="is-main"{% endif %}>{{ 'block.scale_cm' | t }}</th>
+        <th{% if main_col == 'jp' %} class="is-main"{% endif %}>{{ 'block.scale_jp' | t }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td{% if main_col == 'us' %} class="is-main"{% endif %}>{{ m_us | default: '—' }}</td>
+        <td{% if main_col == 'eu' %} class="is-main"{% endif %}>{{ m_eu | default: '—' }}</td>
+        <td{% if main_col == 'uk' %} class="is-main"{% endif %}>{{ m_uk | default: '—' }}</td>
+        <td{% if main_col == 'cm' %} class="is-main"{% endif %}>{{ m_cm | default: '—' }}</td>
+        <td{% if main_col == 'jp' %} class="is-main"{% endif %}>{{ m_jp | default: '—' }}</td>
+      </tr>
+    </tbody>
+  </table>
+{%- endcapture -%}
 
 {%- if display_mode == 'SINGLE_SCALE' -%}
   <dl class="size-norm__pair size-norm__pair--single">
@@ -55,26 +86,7 @@
   </dl>
 
 {%- elsif display_mode == 'FULL_TABLE' -%}
-  <table class="size-norm__table">
-    <thead>
-      <tr>
-        <th>{{ 'block.scale_us' | t }}</th>
-        <th>{{ 'block.scale_eu' | t }}</th>
-        <th>{{ 'block.scale_uk' | t }}</th>
-        <th>{{ 'block.scale_cm' | t }}</th>
-        <th>{{ 'block.scale_jp' | t }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>{{ m_us | default: '—' }}</td>
-        <td>{{ m_eu | default: '—' }}</td>
-        <td>{{ m_uk | default: '—' }}</td>
-        <td>{{ m_cm | default: '—' }}</td>
-        <td>{{ m_jp | default: '—' }}</td>
-      </tr>
-    </tbody>
-  </table>
+  {{ conversion_table }}
 
 {%- else -%}
   {%- comment -%} MAIN_PLUS_TABLE (default) {%- endcomment -%}
@@ -87,25 +99,6 @@
   </div>
   <details class="size-norm__details">
     <summary>{{ 'block.show_all_conversions' | t }}</summary>
-    <table class="size-norm__table">
-      <thead>
-        <tr>
-          <th>{{ 'block.scale_us' | t }}</th>
-          <th>{{ 'block.scale_eu' | t }}</th>
-          <th>{{ 'block.scale_uk' | t }}</th>
-          <th>{{ 'block.scale_cm' | t }}</th>
-          <th>{{ 'block.scale_jp' | t }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>{{ m_us | default: '—' }}</td>
-          <td>{{ m_eu | default: '—' }}</td>
-          <td>{{ m_uk | default: '—' }}</td>
-          <td>{{ m_cm | default: '—' }}</td>
-          <td>{{ m_jp | default: '—' }}</td>
-        </tr>
-      </tbody>
-    </table>
+    {{ conversion_table }}
   </details>
 {%- endif -%}
