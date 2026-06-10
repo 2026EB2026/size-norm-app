@@ -1,11 +1,19 @@
 import { z } from "zod";
 
-/** A single mapping row in a ConversionTable. */
-export const conversionMappingSchema = z.object({
+/**
+ * A single mapping row in a ConversionTable.
+ *
+ * Loose object: extra keys (fr, jp, kr, usM/usW, euM/euW, ukM/ukW, cmM/cmW
+ * from the brand seed) are passed through untouched so that editing a seed
+ * table in the admin UI never drops data the engine or the alias
+ * enrichment relies on.
+ */
+export const conversionMappingSchema = z.looseObject({
   sourceLabel: z.string().trim().min(1),
   us: z.string().trim().nullable(),
   eu: z.string().trim().nullable(),
   uk: z.string().trim().nullable(),
+  cm: z.string().trim().nullable().optional(),
   jpMm: z.coerce.number().int().positive().nullable(),
 });
 

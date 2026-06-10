@@ -14,6 +14,7 @@ import {
   parseMarketScales,
   settingsFormSchema,
 } from "../lib/validators/settings";
+import { useSaveToast, useSubmitting } from "../lib/ui/feedback";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -122,53 +123,49 @@ export default function Settings() {
   const { settings, knownBrandSlugs } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>() as ActionData | undefined;
   const errors = actionData?.errors;
+  const saving = useSubmitting();
+
+  useSaveToast(actionData?.ok, "Impostazioni salvate");
 
   return (
-    <s-page heading="Settings">
-      <s-section heading="Rendering PDP">
-        <s-paragraph>
-          Queste impostazioni vengono lette dalla Theme App Extension (M6) per
-          decidere come renderizzare la tabella conversione sulla PDP.
-        </s-paragraph>
+    <s-page heading="Impostazioni">
+      <Form method="post">
+        <s-section heading="Rendering PDP">
+          <s-paragraph color="subdued">
+            Come la tabella di conversione appare sulla pagina prodotto. Il
+            display mode e la scala possono essere sovrascritti per singolo
+            block dal theme editor.
+          </s-paragraph>
 
-        {actionData?.ok && (
-          <s-banner tone="success">
-            <s-text>Settings salvate.</s-text>
-          </s-banner>
-        )}
-
-        <Form method="post">
           <s-stack direction="block" gap="base">
-            <s-select
-              name="globalDisplayMode"
-              label="Display mode globale"
-              value={settings.globalDisplayMode}
-              error={errors?.globalDisplayMode?.[0]}
-            >
-              <s-option value="SINGLE_SCALE">A — Solo scala selezionata</s-option>
-              <s-option value="FULL_TABLE">B — Tabella completa</s-option>
-              <s-option value="MAIN_PLUS_TABLE">
-                C — Scala principale + tabella espandibile
-              </s-option>
-            </s-select>
-            <s-paragraph>
-              <s-text>
-                (A) Solo scala selezionata · (B) Tabella completa · (C) Scala
-                principale + tabella espandibile
-              </s-text>
-            </s-paragraph>
+            <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+              <s-select
+                name="globalDisplayMode"
+                label="Display mode globale"
+                value={settings.globalDisplayMode}
+                error={errors?.globalDisplayMode?.[0]}
+              >
+                <s-option value="SINGLE_SCALE">
+                  A — Solo scala selezionata
+                </s-option>
+                <s-option value="FULL_TABLE">B — Tabella completa</s-option>
+                <s-option value="MAIN_PLUS_TABLE">
+                  C — Scala principale + tabella espandibile
+                </s-option>
+              </s-select>
 
-            <s-select
-              name="globalScale"
-              label="Scala globale"
-              value={settings.globalScale}
-              error={errors?.globalScale?.[0]}
-            >
-              <s-option value="EU">EU</s-option>
-              <s-option value="US">US</s-option>
-              <s-option value="UK">UK</s-option>
-              <s-option value="JP_MM">JP mondopoint</s-option>
-            </s-select>
+              <s-select
+                name="globalScale"
+                label="Scala globale"
+                value={settings.globalScale}
+                error={errors?.globalScale?.[0]}
+              >
+                <s-option value="EU">EU</s-option>
+                <s-option value="US">US</s-option>
+                <s-option value="UK">UK</s-option>
+                <s-option value="JP_MM">JP mondopoint</s-option>
+              </s-select>
+            </s-grid>
 
             <s-select
               name="fractionFormat"
@@ -180,49 +177,67 @@ export default function Settings() {
               <s-option value="DECIMAL">Decimale (.5)</s-option>
               <s-option value="ASCII">ASCII (1/2)</s-option>
             </s-select>
-
-            <s-text-area
-              name="marketScalesJson"
-              label="Override scala per market (JSON)"
-              rows={6}
-              defaultValue={settings.marketScalesJson}
-              error={errors?.marketScalesJson?.[0]}
-            />
-            <s-paragraph>
-              <s-text>
-                Esempio: &#123;&quot;IT&quot;: &quot;EU&quot;, &quot;UK&quot;:
-                &quot;UK&quot;, &quot;US&quot;: &quot;US&quot;, &quot;JP&quot;:
-                &quot;JP_MM&quot;&#125;. Lascia vuoto per usare ovunque la scala
-                globale.
-              </s-text>
-            </s-paragraph>
-
-            <s-text-area
-              name="brandDisplayScalesJson"
-              label="Scala principale per brand (JSON)"
-              rows={8}
-              defaultValue={settings.brandDisplayScalesJson}
-              error={errors?.brandDisplayScalesJson?.[0]}
-            />
-            <s-paragraph>
-              <s-text>
-                Override della scala principale mostrata sulla PDP per ogni
-                brand. Esempio:{" "}
-                &#123;&quot;asics&quot;: &quot;EU&quot;,
-                &quot;vans&quot;: &quot;US&quot;,
-                &quot;hoka&quot;: &quot;EU&quot;&#125;. Le chiavi sono lo
-                slug del brand (minuscolo + trattini). Brand non presenti
-                usano il default impostato sul block del theme. Brand
-                riconosciuti dall&apos;app:{" "}
-                {knownBrandSlugs.join(", ")}.
-              </s-text>
-            </s-paragraph>
-
-            <s-button type="submit" variant="primary">
-              Salva
-            </s-button>
           </s-stack>
-        </Form>
+        </s-section>
+
+        <s-section heading="Override per market">
+          <s-paragraph color="subdued">
+            Scala principale diversa per ogni market Shopify. I market non
+            elencati usano la scala globale.
+          </s-paragraph>
+          <s-text-area
+            name="marketScalesJson"
+            label="Scala per market (JSON)"
+            rows={5}
+            defaultValue={settings.marketScalesJson}
+            error={errors?.marketScalesJson?.[0]}
+          />
+          <s-paragraph color="subdued">
+            Esempio: &#123;&quot;IT&quot;: &quot;EU&quot;, &quot;UK&quot;:
+            &quot;UK&quot;, &quot;US&quot;: &quot;US&quot;, &quot;JP&quot;:
+            &quot;JP_MM&quot;&#125;
+          </s-paragraph>
+        </s-section>
+
+        <s-section heading="Override per brand">
+          <s-paragraph color="subdued">
+            Scala principale diversa per ogni brand. Le chiavi sono lo slug del
+            vendor (minuscolo + trattini); valori ammessi: US, EU, UK, CM,
+            JP_MM. I brand non elencati usano il default del block.
+          </s-paragraph>
+          <s-text-area
+            name="brandDisplayScalesJson"
+            label="Scala per brand (JSON)"
+            rows={7}
+            defaultValue={settings.brandDisplayScalesJson}
+            error={errors?.brandDisplayScalesJson?.[0]}
+          />
+          <s-paragraph color="subdued">
+            Esempio: &#123;&quot;asics&quot;: &quot;EU&quot;,
+            &quot;vans&quot;: &quot;US&quot;, &quot;hoka&quot;:
+            &quot;EU&quot;&#125;
+          </s-paragraph>
+
+          <s-box>
+            <s-button type="submit" variant="primary" loading={saving}>
+              Salva impostazioni
+            </s-button>
+          </s-box>
+        </s-section>
+      </Form>
+
+      <s-section slot="aside" heading="Brand riconosciuti">
+        <s-paragraph color="subdued">
+          Slug dei brand con scale ufficiali precaricate, utilizzabili come
+          chiavi nell&apos;override per brand:
+        </s-paragraph>
+        <s-stack direction="inline" gap="small">
+          {knownBrandSlugs.map((slug) => (
+            <s-badge key={slug} tone="neutral">
+              {slug}
+            </s-badge>
+          ))}
+        </s-stack>
       </s-section>
     </s-page>
   );

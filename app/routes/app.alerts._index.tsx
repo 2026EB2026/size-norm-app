@@ -106,46 +106,51 @@ export default function AlertsIndex() {
 
       <s-section heading={`${alerts.length} alert (max 200)`}>
         {alerts.length === 0 ? (
-          <s-paragraph>Nessun alert che corrisponda ai filtri.</s-paragraph>
+          <s-paragraph color="subdued">
+            Nessun alert che corrisponda ai filtri.
+          </s-paragraph>
         ) : (
           <s-table>
             <s-table-header-row>
-              <s-table-header>Tipo</s-table-header>
+              <s-table-header listSlot="primary">Tipo</s-table-header>
               <s-table-header>Messaggio</s-table-header>
               <s-table-header>Prodotto</s-table-header>
-              <s-table-header>Variante</s-table-header>
+              <s-table-header>Creato</s-table-header>
               <s-table-header>Stato</s-table-header>
               <s-table-header>Azioni</s-table-header>
             </s-table-header-row>
             <s-table-body>
-              {alerts.map((a) => (
-                <s-table-row key={a.id}>
-                  <s-table-cell>
-                    <s-badge tone="critical">
-                      {ERROR_CODE_LABEL[a.errorCode] ?? a.errorCode}
-                    </s-badge>
-                  </s-table-cell>
-                  <s-table-cell>{a.errorMessage}</s-table-cell>
-                  <s-table-cell>
-                    <s-text>{a.productId.split("/").pop() ?? a.productId}</s-text>
-                  </s-table-cell>
-                  <s-table-cell>
-                    {a.variantId !== null
-                      ? a.variantId.split("/").pop()
-                      : "—"}
-                  </s-table-cell>
-                  <s-table-cell>
-                    {a.resolvedAt === null ? (
-                      <s-badge tone="critical">Aperto</s-badge>
-                    ) : (
-                      <s-badge tone="success">Risolto</s-badge>
-                    )}
-                  </s-table-cell>
-                  <s-table-cell>
-                    <Link to={`/app/alerts/${a.id}`}>Apri</Link>
-                  </s-table-cell>
-                </s-table-row>
-              ))}
+              {alerts.map((a) => {
+                const productNum = a.productId.split("/").pop() ?? "";
+                return (
+                  <s-table-row key={a.id}>
+                    <s-table-cell>
+                      <s-badge
+                        tone={a.resolvedAt === null ? "critical" : "neutral"}
+                      >
+                        {ERROR_CODE_LABEL[a.errorCode] ?? a.errorCode}
+                      </s-badge>
+                    </s-table-cell>
+                    <s-table-cell>{a.errorMessage}</s-table-cell>
+                    <s-table-cell>
+                      <s-link href={`shopify:admin/products/${productNum}`}>
+                        {productNum}
+                      </s-link>
+                    </s-table-cell>
+                    <s-table-cell>{a.createdAt.slice(0, 10)}</s-table-cell>
+                    <s-table-cell>
+                      {a.resolvedAt === null ? (
+                        <s-badge tone="critical">Aperto</s-badge>
+                      ) : (
+                        <s-badge tone="success">Risolto</s-badge>
+                      )}
+                    </s-table-cell>
+                    <s-table-cell>
+                      <Link to={`/app/alerts/${a.id}`}>Apri</Link>
+                    </s-table-cell>
+                  </s-table-row>
+                );
+              })}
             </s-table-body>
           </s-table>
         )}

@@ -12,6 +12,7 @@ import {
   conversionTableFormSchema,
   parseMappingsJson,
 } from "../lib/validators/conversion-table";
+import { useSubmitting } from "../lib/ui/feedback";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -91,7 +92,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       shopDomain: session.shop,
       scaleSigla: parsed.data.scaleSigla,
       brand: parsed.data.brand,
-      mappings,
+      mappings: mappings as never,
       isSeed: false,
     },
   });
@@ -107,6 +108,7 @@ export default function TableNew() {
   const { scales } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>() as ActionData | undefined;
   const errors = actionData?.errors;
+  const creating = useSubmitting();
 
   const firstScale = scales[0];
   const skeleton = firstScale
@@ -116,6 +118,7 @@ export default function TableNew() {
           us: null,
           eu: null,
           uk: null,
+          cm: null,
           jpMm: null,
         })),
         null,
@@ -132,23 +135,26 @@ export default function TableNew() {
       <s-section heading="Crea tabella">
         <Form method="post">
           <s-stack direction="block" gap="base">
-            <s-select
-              name="scaleSigla"
-              label="Scala"
-              value={firstScale?.sigla ?? ""}
-              error={errors?.scaleSigla?.[0]}
-            >
-              {scales.map((s) => (
-                <s-option key={s.sigla} value={s.sigla}>
-                  {s.sigla} — {s.name}
-                </s-option>
-              ))}
-            </s-select>
-            <s-text-field
-              name="brand"
-              label="Brand (vuoto = generic)"
-              error={errors?.brand?.[0]}
-            />
+            <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+              <s-select
+                name="scaleSigla"
+                label="Scala"
+                value={firstScale?.sigla ?? ""}
+                error={errors?.scaleSigla?.[0]}
+              >
+                {scales.map((s) => (
+                  <s-option key={s.sigla} value={s.sigla}>
+                    {s.sigla} — {s.name}
+                  </s-option>
+                ))}
+              </s-select>
+              <s-text-field
+                name="brand"
+                label="Brand (vuoto = generic)"
+                placeholder="es. Gucci"
+                error={errors?.brand?.[0]}
+              />
+            </s-grid>
             <s-text-area
               name="mappingsJson"
               label="Mappings (JSON)"
@@ -156,17 +162,32 @@ export default function TableNew() {
               defaultValue={skeleton}
               error={errors?.mappingsJson?.[0]}
             />
-            <s-paragraph>
-              <s-text>
-                Modifica l&apos;array sotto. Lascia null per i campi senza
-                conversione disponibile. jpMm è intero (es. 250).
-              </s-text>
-            </s-paragraph>
-            <s-button type="submit" variant="primary">
-              Crea tabella
-            </s-button>
+            <s-box>
+              <s-button type="submit" variant="primary" loading={creating}>
+                Crea tabella
+              </s-button>
+            </s-box>
           </s-stack>
         </Form>
+      </s-section>
+
+      <s-section slot="aside" heading="Come compilare">
+        <s-stack direction="block" gap="base">
+          <s-paragraph color="subdued">
+            Il JSON è pre-compilato con una riga per ogni etichetta della scala
+            selezionata: riempi i valori di conversione e lascia{" "}
+            <s-text type="strong">null</s-text> dove non disponibili.
+          </s-paragraph>
+          <s-paragraph color="subdued">
+            <s-text type="strong">jpMm</s-text> è un intero in millimetri (es.
+            250). <s-text type="strong">cm</s-text> è una stringa (es.
+            &quot;25&quot;).
+          </s-paragraph>
+          <s-paragraph color="subdued">
+            Una tabella <s-text type="strong">brand-specific</s-text> ha
+            priorità sulla generic per i prodotti di quel vendor.
+          </s-paragraph>
+        </s-stack>
       </s-section>
     </s-page>
   );

@@ -14,10 +14,12 @@ import {
   parseLabels,
   sizeScaleFormSchema,
 } from "../lib/validators/size-scale";
+import { useSaveToast, useSubmitting } from "../lib/ui/feedback";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const sigla = decodeURIComponent(params.sigla ?? "");
+  const url = new URL(request.url);
 
   const scale = await prisma.sizeScale.findUnique({
     where: { shopDomain_sigla: { shopDomain: session.shop, sigla } },
@@ -34,6 +36,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       : {};
 
   return {
+    saved: url.searchParams.get("saved") === "1",
     scale: {
       sigla: scale.sigla,
       name: scale.name,
@@ -41,6 +44,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       sourceScale: scale.sourceScale,
       labelsRaw: labels.join("\n"),
       aliasesRaw: aliasesToRaw(aliases),
+      labelsCount: labels.length,
+      aliasesCount: Object.keys(aliases).length,
     },
   };
 };
@@ -125,7 +130,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     },
   });
 
-  return redirect(`/app/scales/${encodeURIComponent(parsed.data.sigla)}`);
+  return redirect(
+    `/app/scales/${encodeURIComponent(parsed.data.sigla)}?saved=1`,
+  );
 };
 
 type ActionData = {
@@ -133,65 +140,81 @@ type ActionData = {
   values?: Record<string, unknown>;
 };
 
+const GENDER_LABEL: Record<string, string> = {
+  MEN: "Uomo",
+  WOMEN: "Donna",
+  UNISEX: "Unisex",
+  KID: "Bambino",
+};
+
 export default function ScaleEdit() {
-  const { scale } = useLoaderData<typeof loader>();
+  const { scale, saved } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>() as ActionData | undefined;
   const errors = actionData?.errors;
+  const saving = useSubmitting();
+  const deleting = useSubmitting("delete");
+
+  useSaveToast(saved, "Scala salvata");
 
   return (
-    <s-page heading={`Modifica scala: ${scale.sigla}`}>
+    <s-page heading={`Scala ${scale.sigla}`}>
       <s-button slot="secondary-actions" href="/app/scales">
         Torna alla lista
       </s-button>
 
       <s-section heading="Identità">
+        <s-stack direction="inline" gap="small">
+          <s-badge tone="neutral">
+            {GENDER_LABEL[scale.gender] ?? scale.gender}
+          </s-badge>
+          <s-badge tone="neutral">{`${scale.labelsCount} etichette`}</s-badge>
+          <s-badge tone="neutral">{`${scale.aliasesCount} alias`}</s-badge>
+        </s-stack>
+
         <Form method="post">
           <s-stack direction="block" gap="base">
-            <s-text-field
-              name="sigla"
-              label="Sigla"
-              defaultValue={scale.sigla}
-              error={errors?.sigla?.[0]}
-            />
-            <s-paragraph>
-              <s-text>Identificatore stabile della scala (es. #G, DD, SH). Cambiandolo viene aggiornato il metafield prodotto in M4.</s-text>
-            </s-paragraph>
+            <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+              <s-text-field
+                name="sigla"
+                label="Sigla"
+                defaultValue={scale.sigla}
+                error={errors?.sigla?.[0]}
+              />
+              <s-text-field
+                name="name"
+                label="Nome"
+                defaultValue={scale.name}
+                error={errors?.name?.[0]}
+              />
+            </s-grid>
 
-            <s-text-field
-              name="name"
-              label="Nome"
-              defaultValue={scale.name}
-              error={errors?.name?.[0]}
-            />
+            <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+              <s-select
+                name="gender"
+                label="Genere"
+                value={scale.gender}
+                error={errors?.gender?.[0]}
+              >
+                <s-option value="MEN">Uomo</s-option>
+                <s-option value="WOMEN">Donna</s-option>
+                <s-option value="UNISEX">Unisex</s-option>
+                <s-option value="KID">Bambino</s-option>
+              </s-select>
 
-            <s-select
-              name="gender"
-              label="Genere"
-              value={scale.gender}
-              error={errors?.gender?.[0]}
-            >
-              <s-option value="MEN">Uomo</s-option>
-              <s-option value="WOMEN">Donna</s-option>
-              <s-option value="UNISEX">Unisex</s-option>
-              <s-option value="KID">Bambino</s-option>
-            </s-select>
-
-            <s-select
-              name="sourceScale"
-              label="Scala base"
-              value={scale.sourceScale}
-              error={errors?.sourceScale?.[0]}
-            >
-              <s-option value="EU">EU</s-option>
-              <s-option value="US">US</s-option>
-              <s-option value="UK">UK</s-option>
-              <s-option value="JP_MM">JP mondopoint (mm)</s-option>
-              <s-option value="DOUBLE">Double sizing</s-option>
-              <s-option value="MW_COMBINED">M/W combinato</s-option>
-            </s-select>
-            <s-paragraph>
-              <s-text>EU/US/UK/JP-mm = scala numerica diretta. DOUBLE = double sizing (Hoka, label tipo 3.5/5). MW_COMBINED = US M/W combinato (label tipo M8/W9.5).</s-text>
-            </s-paragraph>
+              <s-select
+                name="sourceScale"
+                label="Scala base"
+                value={scale.sourceScale}
+                error={errors?.sourceScale?.[0]}
+              >
+                <s-option value="EU">EU</s-option>
+                <s-option value="US">US</s-option>
+                <s-option value="UK">UK</s-option>
+                <s-option value="JP_MM">JP mondopoint (mm)</s-option>
+                <s-option value="DOUBLE">Double sizing</s-option>
+                <s-option value="MW_COMBINED">M/W combinato</s-option>
+              </s-select>
+            </s-grid>
 
             <s-text-area
               name="labelsRaw"
@@ -200,9 +223,6 @@ export default function ScaleEdit() {
               defaultValue={scale.labelsRaw}
               error={errors?.labelsRaw?.[0]}
             />
-            <s-paragraph>
-              <s-text>Inserisci le label nella forma esatta usata nelle varianti Shopify (rispetta ½, virgole, prefisso K, ecc.).</s-text>
-            </s-paragraph>
 
             <s-text-area
               name="aliasesRaw"
@@ -211,25 +231,55 @@ export default function ScaleEdit() {
               defaultValue={scale.aliasesRaw}
               error={errors?.aliasesRaw?.[0]}
             />
-            <s-paragraph>
-              <s-text>Le chiavi sono normalizzate in minuscolo. Esempio: &apos;k10=K10&apos; mappa &apos;k10&apos; all&apos;etichetta canonica &apos;K10&apos;.</s-text>
-            </s-paragraph>
 
-            <s-button type="submit" variant="primary">
-              Salva modifiche
-            </s-button>
+            <s-box>
+              <s-button
+                type="submit"
+                variant="primary"
+                loading={saving && !deleting}
+              >
+                Salva modifiche
+              </s-button>
+            </s-box>
           </s-stack>
         </Form>
       </s-section>
 
-      <s-section slot="aside" heading="Elimina scala">
-        <s-paragraph>
-          Cancella questa scala e tutte le sue Conversion Tables. Operazione irreversibile.
+      <s-section slot="aside" heading="Suggerimenti">
+        <s-stack direction="block" gap="base">
+          <s-paragraph color="subdued">
+            <s-text type="strong">Etichette</s-text> — inserisci le label nella
+            forma esatta usata nelle varianti Shopify (½, virgole, prefisso K,
+            ecc.).
+          </s-paragraph>
+          <s-paragraph color="subdued">
+            <s-text type="strong">Alias</s-text> — le chiavi sono normalizzate
+            in minuscolo. Es. <s-text type="strong">k10=K10</s-text> mappa
+            l&apos;input &quot;k10&quot; all&apos;etichetta canonica
+            &quot;K10&quot;.
+          </s-paragraph>
+          <s-paragraph color="subdued">
+            <s-text type="strong">Scala base</s-text> — EU/US/UK/JP-mm =
+            numerica diretta. DOUBLE = double sizing (es. 3.5/5). MW_COMBINED =
+            US M/W combinato (es. M8/W9.5).
+          </s-paragraph>
+        </s-stack>
+      </s-section>
+
+      <s-section slot="aside" heading="Zona pericolosa">
+        <s-paragraph color="subdued">
+          Elimina questa scala e tutte le sue Conversion Tables. Operazione
+          irreversibile.
         </s-paragraph>
         <Form method="post">
           <input type="hidden" name="intent" value="delete" />
-          <s-button type="submit" variant="primary" tone="critical">
-            Elimina
+          <s-button
+            type="submit"
+            variant="primary"
+            tone="critical"
+            loading={deleting}
+          >
+            Elimina scala
           </s-button>
         </Form>
       </s-section>

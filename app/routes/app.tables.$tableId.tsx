@@ -12,10 +12,12 @@ import {
   conversionTableFormSchema,
   parseMappingsJson,
 } from "../lib/validators/conversion-table";
+import { useSaveToast, useSubmitting } from "../lib/ui/feedback";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const tableId = params.tableId ?? "";
+  const url = new URL(request.url);
 
   const table = await prisma.conversionTable.findFirst({
     where: { id: tableId, shopDomain: session.shop },
@@ -25,12 +27,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
 
   return {
+    saved: url.searchParams.get("saved") === "1",
     table: {
       id: table.id,
       scaleSigla: table.scaleSigla,
       brand: table.brand,
       isSeed: table.isSeed,
       mappings: table.mappings,
+      mappingsCount: Array.isArray(table.mappings) ? table.mappings.length : 0,
     },
   };
 };
@@ -92,12 +96,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     data: {
       scaleSigla: parsed.data.scaleSigla,
       brand: parsed.data.brand,
-      mappings,
+      mappings: mappings as never,
       isSeed: false,
     },
   });
 
-  return redirect(`/app/tables/${tableId}`);
+  return redirect(`/app/tables/${tableId}?saved=1`);
 };
 
 type ActionData = {
@@ -106,14 +110,21 @@ type ActionData = {
 };
 
 export default function TableEdit() {
-  const { table } = useLoaderData<typeof loader>();
+  const { table, saved } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>() as ActionData | undefined;
   const errors = actionData?.errors;
+  const anySubmitting = useSubmitting();
+  const validating = useSubmitting("mark-validated");
+  const deleting = useSubmitting("delete");
+  const saving = anySubmitting && !validating && !deleting;
+
+  useSaveToast(saved, "Tabella salvata");
+  useSaveToast(actionData?.ok, "Tabella marcata come validata");
 
   return (
     <s-page
       heading={`Conversion Table: ${table.scaleSigla}${
-        table.brand !== null ? ` × ${table.brand}` : " (Generic)"
+        table.brand !== null ? ` × ${table.brand}` : ""
       }`}
     >
       <s-button slot="secondary-actions" href="/app/tables">
@@ -121,29 +132,44 @@ export default function TableEdit() {
       </s-button>
 
       {table.isSeed && (
-        <s-banner tone="info">
+        <s-banner heading="Tabella seed" tone="info">
           <s-text>
-            Questa tabella è seed. Salvando le modifiche verrà marcata come validata.
-            In alternativa usa il bottone &quot;Marca validata&quot; nella colonna laterale.
+            Fornita dall&apos;app e aggiornata automaticamente. Salvando una
+            modifica diventa di tua proprietà e gli aggiornamenti automatici si
+            fermano.
           </s-text>
         </s-banner>
       )}
 
       <s-section heading="Modifica tabella">
+        <s-stack direction="inline" gap="small">
+          {table.isSeed ? (
+            <s-badge tone="info">Seed</s-badge>
+          ) : (
+            <s-badge tone="success">Validata</s-badge>
+          )}
+          <s-badge tone="neutral">{`${table.mappingsCount} mappings`}</s-badge>
+          <s-badge tone="neutral">
+            {table.brand === null ? "Generic" : `Brand: ${table.brand}`}
+          </s-badge>
+        </s-stack>
+
         <Form method="post">
           <s-stack direction="block" gap="base">
-            <s-text-field
-              name="scaleSigla"
-              label="Sigla scala"
-              defaultValue={table.scaleSigla}
-              error={errors?.scaleSigla?.[0]}
-            />
-            <s-text-field
-              name="brand"
-              label="Brand (vuoto = tabella generic)"
-              defaultValue={table.brand ?? ""}
-              error={errors?.brand?.[0]}
-            />
+            <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+              <s-text-field
+                name="scaleSigla"
+                label="Sigla scala"
+                defaultValue={table.scaleSigla}
+                error={errors?.scaleSigla?.[0]}
+              />
+              <s-text-field
+                name="brand"
+                label="Brand (vuoto = tabella generic)"
+                defaultValue={table.brand ?? ""}
+                error={errors?.brand?.[0]}
+              />
+            </s-grid>
             <s-text-area
               name="mappingsJson"
               label="Mappings (JSON)"
@@ -151,36 +177,52 @@ export default function TableEdit() {
               defaultValue={JSON.stringify(table.mappings, null, 2)}
               error={errors?.mappingsJson?.[0]}
             />
-            <s-paragraph>
-              <s-text>
-                Array di oggetti &#123; sourceLabel, us, eu, uk, jpMm &#125;. us/eu/uk possono essere null. jpMm è intero in mm.
-              </s-text>
-            </s-paragraph>
-            <s-button type="submit" variant="primary">
-              Salva (e marca come validata)
-            </s-button>
+            <s-box>
+              <s-button type="submit" variant="primary" loading={saving}>
+                Salva (e marca come validata)
+              </s-button>
+            </s-box>
           </s-stack>
         </Form>
       </s-section>
 
-      <s-section slot="aside" heading="Azioni">
-        {table.isSeed && (
-          <Form method="post">
-            <input type="hidden" name="intent" value="mark-validated" />
-            <s-button type="submit">Marca validata (senza modifiche)</s-button>
-          </Form>
-        )}
-
-        <s-paragraph>
-          Eliminare una tabella generic fa fallback alla logica di lookup. Eliminare
-          una tabella brand-specific fa cadere il brand sulla generic.
+      <s-section slot="aside" heading="Formato mappings">
+        <s-paragraph color="subdued">
+          Array di oggetti{" "}
+          <s-text type="strong">
+            &#123; sourceLabel, us, eu, uk, cm, jpMm &#125;
+          </s-text>
+          . I campi senza conversione possono essere null. jpMm è un intero in
+          millimetri (es. 250); cm è una stringa (es. &quot;25&quot;).
         </s-paragraph>
-        <Form method="post">
-          <input type="hidden" name="intent" value="delete" />
-          <s-button type="submit" variant="primary" tone="critical">
-            Elimina tabella
-          </s-button>
-        </Form>
+      </s-section>
+
+      <s-section slot="aside" heading="Azioni">
+        <s-stack direction="block" gap="base">
+          {table.isSeed && (
+            <Form method="post">
+              <input type="hidden" name="intent" value="mark-validated" />
+              <s-button type="submit" loading={validating}>
+                Marca validata (senza modifiche)
+              </s-button>
+            </Form>
+          )}
+          <s-paragraph color="subdued">
+            Eliminando una tabella brand-specific il brand fa fallback sulla
+            generic; eliminando la generic, la scala resta senza conversioni.
+          </s-paragraph>
+          <Form method="post">
+            <input type="hidden" name="intent" value="delete" />
+            <s-button
+              type="submit"
+              variant="primary"
+              tone="critical"
+              loading={deleting}
+            >
+              Elimina tabella
+            </s-button>
+          </Form>
+        </s-stack>
       </s-section>
     </s-page>
   );

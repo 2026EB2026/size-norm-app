@@ -19,6 +19,7 @@ import {
   SIZE_NORM_ERROR_TAG,
 } from "../lib/processor/apply-result";
 import { runProcessor } from "../lib/processor";
+import { useSubmitting } from "../lib/ui/feedback";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -47,13 +48,15 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 };
 
 /**
- * Schema for the manual-override form. All four conversion columns are
- * accepted as strings; jpMm is coerced to int.
+ * Schema for the manual-override form. Conversion columns are accepted as
+ * strings; jpMm is coerced to int. CM is optional (not all merchants have
+ * the foot-length data at hand).
  */
 const overrideSchema = z.object({
   us: z.string().trim().min(1, "US obbligatorio"),
   eu: z.string().trim().min(1, "EU obbligatorio"),
   uk: z.string().trim().min(1, "UK obbligatorio"),
+  cm: z.string().trim().default(""),
   jpMm: z.coerce
     .number()
     .int()
@@ -104,13 +107,14 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       us: formData.get("us"),
       eu: formData.get("eu"),
       uk: formData.get("uk"),
+      cm: formData.get("cm") ?? "",
       jpMm: formData.get("jpMm"),
       sourceLabel: formData.get("sourceLabel"),
     });
     if (parsed.success === false) {
       return { errors: parsed.error.flatten().fieldErrors };
     }
-    const { us, eu, uk, jpMm, sourceLabel } = parsed.data;
+    const { us, eu, uk, cm, jpMm, sourceLabel } = parsed.data;
     const variantId = alert.variantId;
 
     // 1. Write variant metafields with manual_override = true.
@@ -143,12 +147,29 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         type: "number_integer",
         value: String(jpMm),
       },
+      ...(cm.length > 0
+        ? [
+            {
+              ownerId: variantId,
+              namespace: "size_norm",
+              key: "cm",
+              type: "single_line_text_field",
+              value: cm,
+            } satisfies MetafieldWrite,
+          ]
+        : []),
       {
         ownerId: variantId,
         namespace: "size_norm",
         key: "matrix",
         type: "json",
-        value: JSON.stringify({ us, eu, uk, jpMm }),
+        value: JSON.stringify({
+          us,
+          eu,
+          uk,
+          cm: cm.length > 0 ? cm : null,
+          jpMm,
+        }),
       },
       {
         ownerId: variantId,
@@ -213,11 +234,30 @@ type ActionData = {
   errors?: Partial<Record<string, string[]>>;
 };
 
+const ERROR_CODE_LABEL: Record<string, string> = {
+  MISSING_METAFIELD: "Metafield mancante",
+  GENDER_MISMATCH: "Gender mismatch",
+  LABEL_NOT_RECOGNIZED: "Etichetta non riconosciuta",
+  TABLE_NOT_FOUND: "Tabella/scala non trovata",
+  MAPPING_NOT_FOUND: "Mapping mancante",
+  SCALE_OUT_OF_SCOPE_V1: "Scala fuori scope V1",
+};
+
 export default function AlertDetail() {
   const { alert } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>() as ActionData | undefined;
   const errors = actionData?.errors;
   const isVariantAlert = alert.variantId !== null;
+  const reprocessing = useSubmitting("reprocess");
+  const dismissing = useSubmitting("dismiss");
+  const overriding = useSubmitting("override");
+
+  const productNum = alert.productId.split("/").pop() ?? "";
+  const variantNum = alert.variantId?.split("/").pop() ?? null;
+  const hasPayload =
+    alert.payload !== null &&
+    typeof alert.payload === "object" &&
+    Object.keys(alert.payload as Record<string, unknown>).length > 0;
 
   return (
     <s-page heading="Dettaglio alert">
@@ -225,67 +265,106 @@ export default function AlertDetail() {
         Torna alla lista
       </s-button>
 
-      <s-section heading={alert.errorCode}>
-        <s-paragraph>{alert.errorMessage}</s-paragraph>
-        <s-paragraph>
-          <s-text>Prodotto:</s-text> {alert.productId}
-        </s-paragraph>
-        {alert.variantId !== null && (
-          <s-paragraph>
-            <s-text>Variante:</s-text> {alert.variantId}
-          </s-paragraph>
-        )}
-        <s-paragraph>
-          <s-text>Creato:</s-text> {alert.createdAt}
-        </s-paragraph>
-        {alert.resolvedAt !== null && (
-          <s-paragraph>
-            <s-text>Risolto:</s-text> {alert.resolvedAt}{" "}
-            {alert.resolvedBy !== null && `(${alert.resolvedBy})`}
-          </s-paragraph>
-        )}
-        {alert.payload !== null &&
-          typeof alert.payload === "object" &&
-          Object.keys(alert.payload as Record<string, unknown>).length > 0 && (
-            <s-paragraph>
-              <s-text>Payload:</s-text>{" "}
+      <s-section heading="Diagnosi">
+        <s-stack direction="block" gap="base">
+          <s-stack direction="inline" gap="small">
+            <s-badge tone="critical">
+              {ERROR_CODE_LABEL[alert.errorCode] ?? alert.errorCode}
+            </s-badge>
+            {alert.resolvedAt === null ? (
+              <s-badge tone="warning">Aperto</s-badge>
+            ) : (
+              <s-badge tone="success">Risolto</s-badge>
+            )}
+          </s-stack>
+
+          <s-paragraph>{alert.errorMessage}</s-paragraph>
+
+          <s-grid gridTemplateColumns="max-content 1fr" gap="small">
+            <s-text color="subdued">Prodotto</s-text>
+            <s-link href={`shopify:admin/products/${productNum}`}>
+              {productNum}
+            </s-link>
+            {variantNum !== null ? (
+              <>
+                <s-text color="subdued">Variante</s-text>
+                <s-text>{variantNum}</s-text>
+              </>
+            ) : null}
+            <s-text color="subdued">Creato</s-text>
+            <s-text>{alert.createdAt.replace("T", " ").slice(0, 19)}</s-text>
+            {alert.resolvedAt !== null ? (
+              <>
+                <s-text color="subdued">Risolto</s-text>
+                <s-text>
+                  {alert.resolvedAt.replace("T", " ").slice(0, 19)}
+                  {alert.resolvedBy !== null ? ` (${alert.resolvedBy})` : ""}
+                </s-text>
+              </>
+            ) : null}
+          </s-grid>
+
+          {hasPayload && (
+            <s-box padding="base" background="subdued" borderRadius="base">
               <s-text>{JSON.stringify(alert.payload, null, 2)}</s-text>
-            </s-paragraph>
+            </s-box>
           )}
+        </s-stack>
       </s-section>
 
       {alert.resolvedAt === null && (
         <>
-          <s-section heading="Azioni rapide">
-            <s-paragraph>
-              Se hai corretto il prodotto su Shopify (es. aggiunto metafield
-              mancante, rinominato variante), riprocessa per chiudere
-              automaticamente l&apos;alert.
-            </s-paragraph>
-            <Form method="post">
-              <input type="hidden" name="intent" value="reprocess" />
-              <s-button type="submit" variant="primary">
-                Riprocessa prodotto
-              </s-button>
-            </Form>
-            <s-paragraph>
-              Oppure se l&apos;errore non è risolvibile e vuoi solo silenziarlo:
-            </s-paragraph>
-            <Form method="post">
-              <input type="hidden" name="intent" value="dismiss" />
-              <s-button type="submit" variant="tertiary">
-                Marca come risolto senza modifiche
-              </s-button>
-            </Form>
+          <s-section heading="Risolvi">
+            <s-grid
+              gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))"
+              gap="base"
+            >
+              <s-box padding="base" border="base" borderRadius="base">
+                <s-stack direction="block" gap="base">
+                  <s-heading>Riprocessa</s-heading>
+                  <s-paragraph color="subdued">
+                    Hai corretto il prodotto su Shopify (metafield aggiunto,
+                    variante rinominata)? Riprocessa per chiudere
+                    automaticamente l&apos;alert.
+                  </s-paragraph>
+                  <Form method="post">
+                    <input type="hidden" name="intent" value="reprocess" />
+                    <s-button
+                      type="submit"
+                      variant="primary"
+                      loading={reprocessing}
+                    >
+                      Riprocessa prodotto
+                    </s-button>
+                  </Form>
+                </s-stack>
+              </s-box>
+
+              <s-box padding="base" border="base" borderRadius="base">
+                <s-stack direction="block" gap="base">
+                  <s-heading>Silenzia</s-heading>
+                  <s-paragraph color="subdued">
+                    L&apos;errore non è risolvibile o non rilevante? Marca
+                    l&apos;alert come risolto senza toccare il prodotto.
+                  </s-paragraph>
+                  <Form method="post">
+                    <input type="hidden" name="intent" value="dismiss" />
+                    <s-button type="submit" loading={dismissing}>
+                      Marca come risolto
+                    </s-button>
+                  </Form>
+                </s-stack>
+              </s-box>
+            </s-grid>
           </s-section>
 
           {isVariantAlert && (
             <s-section heading="Manual override variante">
-              <s-paragraph>
-                Forza i valori US/EU/UK/JP-mm su questa variante. Il metafield
-                <s-text> size_norm.manual_override</s-text> sarà impostato a true
-                e i webhook futuri rispetteranno i tuoi valori (non saranno
-                sovrascritti dal processor automatico).
+              <s-paragraph color="subdued">
+                Forza i valori di conversione su questa variante. Il metafield{" "}
+                <s-text type="strong">size_norm.manual_override</s-text> sarà
+                impostato a true e il processor automatico non sovrascriverà
+                più i tuoi valori.
               </s-paragraph>
               {errors?._form !== undefined && (
                 <s-banner tone="critical">
@@ -297,34 +376,38 @@ export default function AlertDetail() {
                 <s-stack direction="block" gap="base">
                   <s-text-field
                     name="sourceLabel"
-                    label="Etichetta originale (es. 41½, M8/W9.5)"
+                    label="Etichetta originale"
+                    placeholder="es. 41½, M8/W9.5"
                     error={errors?.sourceLabel?.[0]}
                   />
-                  <s-stack direction="inline" gap="base">
+                  <s-grid
+                    gridTemplateColumns="repeat(auto-fit, minmax(100px, 1fr))"
+                    gap="base"
+                  >
+                    <s-text-field name="us" label="US" error={errors?.us?.[0]} />
+                    <s-text-field name="eu" label="EU" error={errors?.eu?.[0]} />
+                    <s-text-field name="uk" label="UK" error={errors?.uk?.[0]} />
                     <s-text-field
-                      name="us"
-                      label="US"
-                      error={errors?.us?.[0]}
-                    />
-                    <s-text-field
-                      name="eu"
-                      label="EU"
-                      error={errors?.eu?.[0]}
-                    />
-                    <s-text-field
-                      name="uk"
-                      label="UK"
-                      error={errors?.uk?.[0]}
+                      name="cm"
+                      label="CM (opzionale)"
+                      error={errors?.cm?.[0]}
                     />
                     <s-text-field
                       name="jpMm"
                       label="JP-mm (intero)"
+                      placeholder="es. 250"
                       error={errors?.jpMm?.[0]}
                     />
-                  </s-stack>
-                  <s-button type="submit" variant="primary">
-                    Applica override
-                  </s-button>
+                  </s-grid>
+                  <s-box>
+                    <s-button
+                      type="submit"
+                      variant="primary"
+                      loading={overriding}
+                    >
+                      Applica override
+                    </s-button>
+                  </s-box>
                 </s-stack>
               </Form>
             </s-section>

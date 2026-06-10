@@ -10,6 +10,7 @@ import { z } from "zod";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import { inngest } from "../inngest/client";
+import { useSubmitting } from "../lib/ui/feedback";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -171,6 +172,9 @@ export default function BulkAdmin() {
   const runningJob = jobs.find(
     (j) => j.status === "RUNNING" || j.status === "PENDING",
   );
+  const startingFull = useSubmitting("full-rescan");
+  const startingScale = useSubmitting("reconvert-by-scale");
+  const startingBrand = useSubmitting("reconvert-by-brand");
 
   return (
     <s-page heading="Bulk re-scan">
@@ -213,7 +217,7 @@ export default function BulkAdmin() {
               </s-paragraph>
               <Form method="post">
                 <input type="hidden" name="intent" value="full-rescan" />
-                <s-button type="submit" variant="primary">
+                <s-button type="submit" variant="primary" loading={startingFull}>
                   Avvia re-scan completo
                 </s-button>
               </Form>
@@ -246,7 +250,11 @@ export default function BulkAdmin() {
                       </s-option>
                     ))}
                   </s-select>
-                  <s-button type="submit" variant="secondary">
+                  <s-button
+                    type="submit"
+                    variant="secondary"
+                    loading={startingScale}
+                  >
                     Reconvert
                   </s-button>
                 </s-stack>
@@ -274,7 +282,11 @@ export default function BulkAdmin() {
                     placeholder="es. Asics"
                     error={errors?.brand?.[0]}
                   />
-                  <s-button type="submit" variant="secondary">
+                  <s-button
+                    type="submit"
+                    variant="secondary"
+                    loading={startingBrand}
+                  >
                     Reconvert
                   </s-button>
                 </s-stack>
