@@ -64,11 +64,17 @@ export async function resolveBrandDisplayScale(
 /**
  * Builds a SHA-256 hash of the fields that the processor reads. Used by
  * `products/update` webhook to skip when nothing relevant changed.
+ *
+ * Includes title and tags because the attribute-inference layer reads
+ * them (gender/age/footwear keywords) — editing "Sneakers prova" into
+ * "Sneakers prova donna" must re-trigger processing.
  */
 export function computeProductHash(product: ShopifyProduct): string {
   const payload = JSON.stringify({
+    title: product.title ?? "",
     vendor: product.vendor ?? "",
     productType: product.productType ?? "",
+    tags: [...product.tags].sort(),
     gender: product.gender ?? "",
     scaleSigla: product.scaleSigla ?? "",
     ageCategory: product.ageCategory ?? "",

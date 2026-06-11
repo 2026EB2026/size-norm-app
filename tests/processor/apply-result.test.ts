@@ -79,17 +79,25 @@ describe("computeProductHash", () => {
     expect(computeProductHash(p1)).not.toBe(computeProductHash(p2));
   });
 
-  it("does NOT change when only title changes (irrelevant field)", () => {
+  it("changes when title changes (feeds gender/footwear inference)", () => {
     const p1 = baseProduct();
     const p2 = baseProduct();
     p2.title = "Different title";
-    expect(computeProductHash(p1)).toBe(computeProductHash(p2));
+    expect(computeProductHash(p1)).not.toBe(computeProductHash(p2));
   });
 
-  it("does NOT change when only tags change (irrelevant field)", () => {
+  it("changes when tags change (feed gender/footwear inference)", () => {
     const p1 = baseProduct();
     const p2 = baseProduct();
     p2.tags = ["new-tag"];
+    expect(computeProductHash(p1)).not.toBe(computeProductHash(p2));
+  });
+
+  it("is order-independent for tags", () => {
+    const p1 = baseProduct();
+    const p2 = baseProduct();
+    p1.tags = ["a", "b"];
+    p2.tags = ["b", "a"];
     expect(computeProductHash(p1)).toBe(computeProductHash(p2));
   });
 
