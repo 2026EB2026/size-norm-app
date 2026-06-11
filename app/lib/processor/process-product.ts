@@ -23,6 +23,7 @@ import type {
   Gender,
   SizeScale,
 } from "../conversion";
+import { looksLikeFootwear } from "./infer-attributes";
 
 /** Tag added to products that finished processing with an error. */
 export const SIZE_NORM_ERROR_TAG = "size-norm:error";
@@ -54,6 +55,8 @@ export const DEFAULT_SIZE_OPTION_NAMES: readonly string[] = [
 export interface ProcessorInput {
   product: {
     id: string;
+    /** Product title — used by the footwear-gate keyword fallback. */
+    title?: string | null;
     vendor: string | null;
     productType: string | null;
     tags: string[];
@@ -187,22 +190,29 @@ export function processProduct(input: ProcessorInput): ProcessingResult {
     sizeOptionNames = DEFAULT_SIZE_OPTION_NAMES,
   } = input;
 
-  // 1. Footwear gate. Non-footwear products are silently skipped.
-  if (!isFootwear(product, footwearProductTypes)) {
+  // 1. Footwear gate. The product_type whitelist is the primary signal;
+  // when it doesn't match (e.g. empty product_type on quickly-created
+  // products) we fall back to explicit footwear keywords in
+  // title/tags/product_type. Non-footwear products are silently skipped.
+  if (!isFootwear(product, footwearProductTypes) && !looksLikeFootwear(product)) {
     return { kind: "skip", reason: "not_footwear" };
   }
 
-  // 2. Required product metafields. `gender` is always required; `scaleSigla`
-  // is OPTIONAL because the orchestrator auto-derives a sigla from
-  // vendor + gender + age_category and falls back to Atelier scales. If
-  // nothing resolves, we'll catch it at step 3 (scale === null).
+  // 2. Required product metafields. `gender` is always required at this
+  // point — the orchestrator has already tried the explicit metafield AND
+  // text inference (title/tags/product type), so if it's still null there
+  // is genuinely no signal. `scaleSigla` is OPTIONAL because the
+  // orchestrator auto-derives a sigla from vendor + gender + age_category
+  // and falls back to Atelier scales. If nothing resolves, we'll catch it
+  // at step 3 (scale === null).
   if (product.gender === null || product.gender.trim().length === 0) {
     const tags = tagsAfter(product.tags, true);
     return {
       kind: "draft",
       productAlert: {
         errorCode: "MISSING_METAFIELD",
-        errorMessage: `Metadati prodotto mancanti: size_norm.gender`,
+        errorMessage:
+          "Impossibile determinare il gender: aggiungi il metafield size_norm.gender oppure includi uomo/donna/kids nel titolo, nei tag o nel tipo prodotto.",
         payload: { missing: ["size_norm.gender"] },
       },
       variantAlerts: [],

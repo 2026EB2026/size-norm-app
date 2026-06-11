@@ -7,7 +7,9 @@ import type { PrismaClient } from "@prisma/client";
 
 import {
   getProductForProcessing,
+  setMetafields,
   type Admin,
+  type MetafieldWrite,
 } from "../shopify/client";
 import type {
   ConversionTable,
@@ -20,6 +22,10 @@ import {
   applyProcessingResult,
   shouldProcessProduct,
 } from "./apply-result";
+import {
+  inferAgeCategoryFromText,
+  inferGenderFromText,
+} from "./infer-attributes";
 import { processProduct, type ProcessingResult } from "./process-product";
 
 type PrismaSizeScaleRow = {
@@ -132,12 +138,16 @@ function atelierFallbackByGender(
  * Builds the ordered list of scale sigle to try for one product, most
  * specific first. The processor uses the first sigla that resolves to a
  * SizeScale row in DB.
+ *
+ * `gender` and `age` must already be the resolved/inferred canonical
+ * values (the orchestrator combines metafield + text inference before
+ * calling this).
  */
 function resolveCandidateSigle(product: {
   vendor: string | null;
-  gender: string | null;
   scaleSigla: string | null;
-  ageCategory: string | null;
+  gender: string | null;
+  age: string;
 }): string[] {
   const out: string[] = [];
 
@@ -146,27 +156,27 @@ function resolveCandidateSigle(product: {
     out.push(product.scaleSigla.trim());
   }
 
-  // Normalize gender once (accepts "woman"/"donna"/"man"/"uomo"/etc).
-  const normalizedGender = normalizeGender(product.gender);
+  const brand =
+    product.vendor !== null && product.vendor.trim().length > 0
+      ? slugifyBrand(product.vendor)
+      : "";
 
-  // 2. Auto-derive from vendor + gender + age_category.
-  if (
-    product.vendor !== null &&
-    product.vendor.trim().length > 0 &&
-    normalizedGender !== null
-  ) {
-    const brand = slugifyBrand(product.vendor);
-    const age =
-      product.ageCategory !== null && product.ageCategory.trim().length > 0
-        ? product.ageCategory.trim().toLowerCase()
-        : "adult";
-    if (brand.length > 0) {
-      out.push(`${brand}-${normalizedGender}-${age}`);
+  if (brand.length > 0) {
+    // 2. Auto-derive from vendor + gender + age_category.
+    if (product.gender !== null) {
+      out.push(`${brand}-${product.gender}-${product.age}`);
+    }
+    // 3. Brand unisex scale: valid for ANY product gender (unisex scales
+    // pass validateGenderMatch unconditionally). Covers brands like
+    // Birkenstock/Saucony/Hoka that only publish a unisex chart, and
+    // products whose gender couldn't be determined at all.
+    if (product.gender !== "unisex") {
+      out.push(`${brand}-unisex-${product.age}`);
     }
   }
 
-  // 3. Atelier fallback by normalized gender.
-  const atelier = atelierFallbackByGender(normalizedGender);
+  // 4. Atelier fallback by gender.
+  const atelier = atelierFallbackByGender(product.gender);
   if (atelier !== null) out.push(atelier);
 
   return out;
@@ -202,39 +212,125 @@ export async function runProcessor(
     }
   }
 
-  // Resolve which SizeScale to use, in priority order:
+  // ── Attribute resolution ────────────────────────────────────────────
+  // Gender: explicit metafield first (normalized: "woman"/"donna"/… are
+  // accepted), then inference from title/tags/product type. Same for the
+  // kid age category. This is what makes processing "zero-setup": a
+  // product titled "Sneakers ASICS donna" processes with no metafields.
+  const metafieldGender = normalizeGender(product.gender);
+  const inferredGender =
+    metafieldGender === null ? inferGenderFromText(product) : null;
+  let effectiveGender = metafieldGender ?? inferredGender;
+
+  const metafieldAge =
+    product.ageCategory !== null && product.ageCategory.trim().length > 0
+      ? product.ageCategory.trim().toLowerCase()
+      : null;
+  const inferredAge =
+    metafieldAge === null && effectiveGender === "kid"
+      ? inferAgeCategoryFromText(product)
+      : null;
+  const effectiveAge = metafieldAge ?? inferredAge ?? "adult";
+
+  // ── Scale resolution, in priority order ─────────────────────────────
   //   1. `product.scaleSigla` (manual override metafield)
-  //   2. Auto-derived from vendor + gender + age_category:
-  //        `{slug(vendor)}-{gender}-{age_category|"adult"}`
-  //   3. Atelier fallback by gender (G/I/AM for men/women/unisex)
-  // Returns null when none of the above resolves; the pure processor will
-  // then emit a TABLE_NOT_FOUND alert.
+  //   2. `{slug(vendor)}-{gender}-{age}` (auto-derived)
+  //   3. `{slug(vendor)}-unisex-{age}` (brand unisex accepts any gender)
+  //   4. Atelier fallback by gender (G/I/AM)
+  //   5. Unique-brand fallback: when the brand has exactly ONE scale for
+  //      the age bucket, use it even without a gender signal.
+  // Null when nothing matched; the pure processor then emits TABLE_NOT_FOUND.
   let scale: SizeScale | null = null;
   let tables: ConversionTable[] = [];
-  const candidateSigle = resolveCandidateSigle(product);
+  const candidateSigle = resolveCandidateSigle({
+    vendor: product.vendor,
+    scaleSigla: product.scaleSigla,
+    gender: effectiveGender,
+    age: effectiveAge,
+  });
   for (const sigla of candidateSigle) {
     const scaleRow = await prisma.sizeScale.findUnique({
       where: { shopDomain_sigla: { shopDomain, sigla } },
     });
     if (scaleRow === null) continue;
     scale = prismaScaleToEngine(scaleRow);
-    const tableRows = await prisma.conversionTable.findMany({
-      where: { shopDomain, scaleSigla: scaleRow.sigla },
-    });
-    tables = tableRows.map(prismaTableToEngine);
     break;
   }
 
-  // Pass a copy of the product with the gender field normalized to the
-  // canonical 4 enum values. This lets the merchant type "woman"/"donna" and
-  // still pass both the MISSING_METAFIELD check and the gender-vs-scale
-  // consistency check in processProduct.
+  if (
+    scale === null &&
+    product.vendor !== null &&
+    product.vendor.trim().length > 0
+  ) {
+    const brand = slugifyBrand(product.vendor);
+    if (brand.length > 0) {
+      const brandScales = await prisma.sizeScale.findMany({
+        where: { shopDomain, sigla: { startsWith: `${brand}-` } },
+      });
+      const forAge = brandScales.filter((s) =>
+        s.sigla.endsWith(`-${effectiveAge}`),
+      );
+      const pool = forAge.length > 0 ? forAge : brandScales;
+      if (pool.length === 1) {
+        scale = prismaScaleToEngine(pool[0] as PrismaSizeScaleRow);
+      }
+    }
+  }
+
+  if (scale !== null) {
+    const tableRows = await prisma.conversionTable.findMany({
+      where: { shopDomain, scaleSigla: scale.sigla },
+    });
+    tables = tableRows.map(prismaTableToEngine);
+    // If we still have no gender signal but a scale resolved (unisex
+    // candidate or unique-brand fallback), adopt the scale's gender so
+    // processProduct's required-gender and consistency checks pass.
+    if (effectiveGender === null) {
+      effectiveGender = scale.gender;
+    }
+  }
+
+  // Pass a copy of the product with gender resolved to the canonical 4
+  // enum values (from metafield, text inference, or scale adoption).
   const normalizedProduct: typeof product = {
     ...product,
-    gender: normalizeGender(product.gender),
+    gender: effectiveGender,
+    ageCategory: effectiveAge,
   };
   const result = processProduct({ product: normalizedProduct, scale, tables });
   await applyProcessingResult(admin, prisma, shopDomain, product, result);
+
+  // ── Persist inferred attributes ─────────────────────────────────────
+  // When processing succeeded using inferred values, write them back to
+  // the product metafields so (a) the merchant sees and can correct them
+  // in Shopify admin, and (b) future runs take the explicit-metafield
+  // path. The follow-up products/update webhook re-processes once (the
+  // snapshot hash changes), converges, then goes quiet.
+  if (result.kind === "success") {
+    const writes: MetafieldWrite[] = [];
+    if (metafieldGender === null && effectiveGender !== null) {
+      writes.push({
+        ownerId: product.id,
+        namespace: "size_norm",
+        key: "gender",
+        type: "single_line_text_field",
+        value: effectiveGender,
+      });
+    }
+    if (metafieldAge === null && inferredAge !== null) {
+      writes.push({
+        ownerId: product.id,
+        namespace: "size_norm",
+        key: "age_category",
+        type: "single_line_text_field",
+        value: inferredAge,
+      });
+    }
+    if (writes.length > 0) {
+      await setMetafields(admin, writes);
+    }
+  }
+
   return result;
 }
 
