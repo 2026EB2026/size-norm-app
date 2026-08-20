@@ -1,8 +1,7 @@
 {%- comment -%}
   Renders the conversion table for a single variant matrix according to the
-  chosen display mode. Used both at SSR (server-side initial render) and as
-  the template the JS uses when it builds the DOM client-side after a
-  variant change.
+  chosen display mode. Used at SSR; the bundled JS rebuilds the same markup
+  client-side when the shopper picks another variant.
 
   Inputs:
     - matrix: object with keys us, eu, uk, cm, jpMm (any can be null)
@@ -10,44 +9,41 @@
     - display_mode: SINGLE_SCALE | FULL_TABLE | MAIN_PLUS_TABLE
     - fraction_format: UNICODE | DECIMAL | ASCII
     - default_scale: US | EU | UK | CM | JP_MM — primary scale to highlight
+    - columns: comma-separated, ordered list of columns to render
+               (subset of "us,eu,uk,cm,jp")
+    - highlight_main: boolean — emphasise the main scale column
+    - show_source: boolean — show the original size label
+    - label_us / label_eu / label_uk / label_cm / label_jp / label_summary
 
-  Display columns (5): US | EU | UK | CM | JP. JP is shown as the raw
-  Japanese mondopoint mm integer (e.g. 240) to match what's persisted in
-  the JSON metafield. CM is the human-readable cm value (e.g. 24).
-  Always render all columns even when individual values are null (shown as
-  "—") so the matrix stays visually consistent across products.
-
-  The column matching default_scale gets the `is-main` class on its th/td
-  so the CSS can emphasize it (quiet wash + stronger figures).
+  JP is shown as the raw Japanese mondopoint mm integer (e.g. 240) to match
+  what's persisted in the JSON metafield; CM carries the human-readable cm
+  value. Enabled columns always render, showing "—" when a value is null, so
+  the matrix stays visually consistent across products.
 {%- endcomment -%}
 
 {%- liquid
-  assign m_us = matrix.us
-  assign m_eu = matrix.eu
-  assign m_uk = matrix.uk
-  assign m_cm = matrix.cm
-  assign m_jp = matrix.jpMm
+  assign col_list = columns | split: ','
 
   case default_scale
     when 'US'
-      assign main_label = 'block.scale_us' | t
-      assign main_value = m_us
+      assign main_label = label_us
+      assign main_value = matrix.us
       assign main_col = 'us'
     when 'UK'
-      assign main_label = 'block.scale_uk' | t
-      assign main_value = m_uk
+      assign main_label = label_uk
+      assign main_value = matrix.uk
       assign main_col = 'uk'
     when 'CM'
-      assign main_label = 'block.scale_cm' | t
-      assign main_value = m_cm
+      assign main_label = label_cm
+      assign main_value = matrix.cm
       assign main_col = 'cm'
     when 'JP_MM'
-      assign main_label = 'block.scale_jp' | t
-      assign main_value = m_jp
+      assign main_label = label_jp
+      assign main_value = matrix.jpMm
       assign main_col = 'jp'
     else
-      assign main_label = 'block.scale_eu' | t
-      assign main_value = m_eu
+      assign main_label = label_eu
+      assign main_value = matrix.eu
       assign main_col = 'eu'
   endcase
 -%}
@@ -56,20 +52,56 @@
   <table class="size-norm__table">
     <thead>
       <tr>
-        <th{% if main_col == 'us' %} class="is-main"{% endif %}>{{ 'block.scale_us' | t }}</th>
-        <th{% if main_col == 'eu' %} class="is-main"{% endif %}>{{ 'block.scale_eu' | t }}</th>
-        <th{% if main_col == 'uk' %} class="is-main"{% endif %}>{{ 'block.scale_uk' | t }}</th>
-        <th{% if main_col == 'cm' %} class="is-main"{% endif %}>{{ 'block.scale_cm' | t }}</th>
-        <th{% if main_col == 'jp' %} class="is-main"{% endif %}>{{ 'block.scale_jp' | t }}</th>
+        {%- for col in col_list -%}
+          {%- liquid
+            case col
+              when 'us'
+                assign head = label_us
+              when 'eu'
+                assign head = label_eu
+              when 'uk'
+                assign head = label_uk
+              when 'cm'
+                assign head = label_cm
+              when 'jp'
+                assign head = label_jp
+              else
+                continue
+            endcase
+            assign is_main = false
+            if highlight_main and col == main_col
+              assign is_main = true
+            endif
+          -%}
+          <th{% if is_main %} class="is-main"{% endif %}>{{ head }}</th>
+        {%- endfor -%}
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td{% if main_col == 'us' %} class="is-main"{% endif %}>{{ m_us | default: '—' }}</td>
-        <td{% if main_col == 'eu' %} class="is-main"{% endif %}>{{ m_eu | default: '—' }}</td>
-        <td{% if main_col == 'uk' %} class="is-main"{% endif %}>{{ m_uk | default: '—' }}</td>
-        <td{% if main_col == 'cm' %} class="is-main"{% endif %}>{{ m_cm | default: '—' }}</td>
-        <td{% if main_col == 'jp' %} class="is-main"{% endif %}>{{ m_jp | default: '—' }}</td>
+        {%- for col in col_list -%}
+          {%- liquid
+            case col
+              when 'us'
+                assign cell = matrix.us
+              when 'eu'
+                assign cell = matrix.eu
+              when 'uk'
+                assign cell = matrix.uk
+              when 'cm'
+                assign cell = matrix.cm
+              when 'jp'
+                assign cell = matrix.jpMm
+              else
+                continue
+            endcase
+            assign is_main = false
+            if highlight_main and col == main_col
+              assign is_main = true
+            endif
+          -%}
+          <td{% if is_main %} class="is-main"{% endif %}>{{ cell | default: '—' }}</td>
+        {%- endfor -%}
       </tr>
     </tbody>
   </table>
@@ -79,7 +111,7 @@
   <dl class="size-norm__pair size-norm__pair--single">
     <dt>{{ main_label }}</dt>
     <dd>{{ main_value | default: '—' }}</dd>
-    {%- if source_label -%}
+    {%- if show_source and source_label -%}
       <dt class="size-norm__source-label-key">{{ 'block.source_label' | t }}</dt>
       <dd>{{ source_label }}</dd>
     {%- endif -%}
@@ -93,12 +125,12 @@
   <div class="size-norm__main">
     <span class="size-norm__main-label">{{ main_label }}</span>
     <span class="size-norm__main-value">{{ main_value | default: '—' }}</span>
-    {%- if source_label and source_label != main_value -%}
+    {%- if show_source and source_label and source_label != main_value -%}
       <span class="size-norm__main-source">({{ source_label }})</span>
     {%- endif -%}
   </div>
   <details class="size-norm__details">
-    <summary>{{ 'block.show_all_conversions' | t }}</summary>
+    <summary>{{ label_summary }}</summary>
     {{ conversion_table }}
   </details>
 {%- endif -%}

@@ -1,15 +1,23 @@
 /*
- * Size Norm PDP block — refined, theme-friendly styling.
+ * Size Norm PDP block — theme-friendly, merchant-customizable styling.
  *
- * Design intent: luxury-minimal. The block inherits typography from the
- * host theme (font-family, color) so it blends with the PDP; we add a
- * quiet editorial layer on top: letter-spaced uppercase micro-labels,
- * hairline rules, tabular numerals, and a soft emphasis on the merchant's
- * chosen "main" scale column (.is-main).
+ * Design intent: luxury-minimal by default, restyleable from the theme
+ * editor without writing CSS. The block inherits typography from the host
+ * theme; everything else is driven by custom properties that the Liquid
+ * block sets from the merchant's settings:
  *
- * All translucent strokes derive from currentColor so the block adapts to
- * dark themes automatically. rgba() fallbacks come first; color-mix()
- * upgrades them on modern browsers.
+ *   --sn-accent     highlighted column colour     (default: currentColor)
+ *   --sn-text       body text colour              (default: inherit)
+ *   --sn-hairline   rule colour                   (default: auto from text)
+ *   --sn-wash       highlight background          (default: auto from text)
+ *   --sn-radius     corner radius                 (default: 0)
+ *   --sn-main-size  main value font size          (default: 1.5em)
+ *
+ * Any of them left unset falls back to the automatic values below, which
+ * derive from currentColor so dark themes work with no configuration.
+ *
+ * Presets (.size-norm--minimal | --card | --bordered | --pills) and
+ * densities (.size-norm--density-*) layer on top.
  */
 
 .size-norm {
@@ -17,18 +25,39 @@
   margin: 1.5rem 0;
   font-size: inherit;
   font-family: inherit;
-  color: inherit;
-  --sn-hairline: rgba(0, 0, 0, 0.12);
+  color: var(--sn-text, inherit);
+
+  /* Automatic fallbacks — overridden inline when the merchant picks colours. */
+  --sn-hairline-auto: rgba(0, 0, 0, 0.12);
   --sn-hairline-soft: rgba(0, 0, 0, 0.07);
-  --sn-wash: rgba(0, 0, 0, 0.035);
+  --sn-wash-auto: rgba(0, 0, 0, 0.035);
+
+  /* Density tokens, re-declared by the density modifiers. */
+  --sn-cell-y: 0.7rem;
+  --sn-cell-x: 0.5rem;
+  --sn-gap: 0.65rem;
 }
 
 @supports (color: color-mix(in srgb, red 50%, transparent)) {
   .size-norm {
-    --sn-hairline: color-mix(in srgb, currentColor 22%, transparent);
+    --sn-hairline-auto: color-mix(in srgb, currentColor 22%, transparent);
     --sn-hairline-soft: color-mix(in srgb, currentColor 12%, transparent);
-    --sn-wash: color-mix(in srgb, currentColor 5%, transparent);
+    --sn-wash-auto: color-mix(in srgb, currentColor 5%, transparent);
   }
+}
+
+/* Resolved values used throughout: merchant setting → automatic fallback. */
+.size-norm {
+  --sn-rule: var(--sn-hairline, var(--sn-hairline-auto));
+  --sn-rule-soft: var(--sn-hairline, var(--sn-hairline-soft));
+  --sn-highlight: var(--sn-wash, var(--sn-wash-auto));
+  --sn-emphasis: var(--sn-accent, currentColor);
+}
+
+.size-norm__title {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.95em;
+  font-weight: 600;
 }
 
 .size-norm__container {
@@ -42,17 +71,41 @@
   font-style: italic;
 }
 
+/* ── Density ──────────────────────────────────────────────────────── */
+
+.size-norm--density-compact {
+  --sn-cell-y: 0.4rem;
+  --sn-cell-x: 0.35rem;
+  --sn-gap: 0.45rem;
+}
+
+.size-norm--density-roomy {
+  --sn-cell-y: 1rem;
+  --sn-cell-x: 0.75rem;
+  --sn-gap: 0.9rem;
+}
+
 /* ── Micro-label (shared) ─────────────────────────────────────────── */
 
-.size-norm__main-label,
-.size-norm__pair dt,
-.size-norm__table th,
-.size-norm__details > summary,
+.size-norm--labels-uppercase .size-norm__main-label,
+.size-norm--labels-uppercase .size-norm__pair dt,
+.size-norm--labels-uppercase .size-norm__table th,
+.size-norm--labels-uppercase .size-norm__details > summary,
 .size-norm__fit-notes-lang {
   font-size: 0.68em;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.size-norm--labels-normal .size-norm__main-label,
+.size-norm--labels-normal .size-norm__pair dt,
+.size-norm--labels-normal .size-norm__table th,
+.size-norm--labels-normal .size-norm__details > summary {
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* ── SINGLE_SCALE layout ──────────────────────────────────────────── */
@@ -72,7 +125,7 @@
 
 .size-norm__pair dd {
   margin: 0;
-  font-size: 1.25em;
+  font-size: var(--sn-main-size, 1.25em);
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -91,7 +144,7 @@
 .size-norm__main {
   display: flex;
   align-items: baseline;
-  gap: 0.65rem;
+  gap: var(--sn-gap);
   flex-wrap: wrap;
   margin-bottom: 0.65rem;
 }
@@ -101,10 +154,11 @@
 }
 
 .size-norm__main-value {
-  font-size: 1.5em;
+  font-size: var(--sn-main-size, 1.5em);
   font-weight: 500;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
+  color: var(--sn-emphasis);
 }
 
 .size-norm__main-source {
@@ -112,7 +166,7 @@
   font-size: 0.88em;
 }
 
-/* ── Conversion table ─────────────────────────────────────────────── */
+/* ── Conversion table — base ──────────────────────────────────────── */
 
 .size-norm__table {
   width: 100%;
@@ -123,32 +177,98 @@
 }
 
 .size-norm__table th {
-  padding: 0.5rem 0.5rem 0.45rem;
+  padding: calc(var(--sn-cell-y) * 0.7) var(--sn-cell-x);
   text-align: center;
   border: 0;
-  border-bottom: 1px solid var(--sn-hairline);
   background: none;
   opacity: 0.55;
 }
 
 .size-norm__table td {
-  padding: 0.7rem 0.5rem;
+  padding: var(--sn-cell-y) var(--sn-cell-x);
   text-align: center;
   border: 0;
-  border-bottom: 1px solid var(--sn-hairline-soft);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
 
-/* The merchant's chosen main scale gets a quiet wash + stronger figures. */
+/* Highlighted (main) column. */
 .size-norm__table th.is-main {
   opacity: 0.9;
-  border-bottom-color: currentColor;
+  color: var(--sn-emphasis);
 }
 
 .size-norm__table td.is-main {
-  background: var(--sn-wash);
+  background: var(--sn-highlight);
   font-weight: 600;
+  color: var(--sn-emphasis);
+}
+
+/* ── Preset: minimal (default) — hairline rules only ──────────────── */
+
+.size-norm--minimal .size-norm__table th {
+  border-bottom: 1px solid var(--sn-rule);
+}
+
+.size-norm--minimal .size-norm__table td {
+  border-bottom: 1px solid var(--sn-rule-soft);
+}
+
+.size-norm--minimal .size-norm__table th.is-main {
+  border-bottom-color: var(--sn-emphasis);
+}
+
+/* ── Preset: card — framed container with a soft background ───────── */
+
+.size-norm--card .size-norm__container {
+  padding: 1rem;
+  border: 1px solid var(--sn-rule);
+  border-radius: var(--sn-radius, 0);
+  background: var(--sn-highlight);
+}
+
+.size-norm--card .size-norm__table th {
+  border-bottom: 1px solid var(--sn-rule);
+}
+
+.size-norm--card .size-norm__table td.is-main {
+  background: none;
+  text-decoration: underline;
+  text-decoration-color: var(--sn-emphasis);
+  text-underline-offset: 0.25em;
+}
+
+/* ── Preset: bordered — full grid ─────────────────────────────────── */
+
+.size-norm--bordered .size-norm__table {
+  border: 1px solid var(--sn-rule);
+  border-radius: var(--sn-radius, 0);
+  overflow: hidden;
+}
+
+.size-norm--bordered .size-norm__table th,
+.size-norm--bordered .size-norm__table td {
+  border: 1px solid var(--sn-rule);
+}
+
+.size-norm--bordered .size-norm__table th {
+  background: var(--sn-highlight);
+}
+
+/* ── Preset: pills — rounded, separated cells ─────────────────────── */
+
+.size-norm--pills .size-norm__table {
+  border-collapse: separate;
+  border-spacing: 0.25rem;
+}
+
+.size-norm--pills .size-norm__table td {
+  border: 1px solid var(--sn-rule);
+  border-radius: var(--sn-radius, 999px);
+}
+
+.size-norm--pills .size-norm__table td.is-main {
+  border-color: var(--sn-emphasis);
 }
 
 /* ── Expandable details ───────────────────────────────────────────── */
@@ -221,7 +341,7 @@
 .size-norm__fit-notes {
   margin-top: 1.25rem;
   padding-top: 0.9rem;
-  border-top: 1px solid var(--sn-hairline-soft);
+  border-top: 1px solid var(--sn-rule-soft);
 }
 
 .size-norm__fit-notes-heading {
@@ -256,10 +376,8 @@
     font-size: 0.88em;
   }
 
-  .size-norm__table th,
-  .size-norm__table td {
-    padding-left: 0.3rem;
-    padding-right: 0.3rem;
+  .size-norm {
+    --sn-cell-x: 0.3rem;
   }
 
   .size-norm__fit-notes-grid {

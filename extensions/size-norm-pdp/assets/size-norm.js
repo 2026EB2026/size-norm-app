@@ -11,10 +11,36 @@
  * Prestige, etc. because it doesn't depend on theme-specific custom elements
  * — only the universal `<input name="id">` inside the cart form.
  *
+ * Presentation is driven entirely by data-* attributes written by the Liquid
+ * block from the merchant's theme-editor settings (enabled columns, labels,
+ * highlight on/off, source label on/off), so this file and the Liquid
+ * snippet always produce the same markup.
+ *
  * Fraction formatting: the metafield stores values as the merchant chose in
  * Settings, so we don't reformat client-side. This keeps the component
  * deterministic and SSR/client-render output identical.
  */
+
+/** Column order must mirror the Liquid snippet. */
+const COLUMN_ORDER = ["us", "eu", "uk", "cm", "jp"];
+
+/** Maps a column key to the matrix property that holds its value. */
+const COLUMN_FIELD = {
+  us: "us",
+  eu: "eu",
+  uk: "uk",
+  cm: "cm",
+  jp: "jpMm",
+};
+
+/** Maps the `default_scale` setting to a column key. */
+const SCALE_TO_COLUMN = {
+  US: "us",
+  EU: "eu",
+  UK: "uk",
+  CM: "cm",
+  JP_MM: "jp",
+};
 
 class SizeNormTable extends HTMLElement {
   constructor() {
@@ -23,11 +49,13 @@ class SizeNormTable extends HTMLElement {
     this._observer = null;
     this._currentVariantId = null;
     this._labels = null;
+    this._columns = null;
   }
 
   connectedCallback() {
     this._variantMap = this._parseVariantMap();
     this._labels = this._readLabels();
+    this._columns = this._readColumns();
     this._wireVariantWatcher();
   }
 
@@ -50,9 +78,8 @@ class SizeNormTable extends HTMLElement {
   }
 
   /**
-   * Localized labels are exposed via `data-label-*` attributes on the root
-   * so the JS can render the table without a fetch. The block sets these in
-   * a follow-up patch; for now we ship sensible fallbacks.
+   * Localized (and merchant-overridable) labels come from `data-label-*`
+   * attributes on the root, so the JS can render without a fetch.
    */
   _readLabels() {
     return {
@@ -60,11 +87,33 @@ class SizeNormTable extends HTMLElement {
       eu: this.dataset.labelEu ?? "EU",
       uk: this.dataset.labelUk ?? "UK",
       cm: this.dataset.labelCm ?? "CM",
-      jp: this.dataset.labelJp ?? "JP-mm",
+      jp: this.dataset.labelJp ?? "JP",
       sourceLabel: this.dataset.labelSource ?? "Tag",
       showAll: this.dataset.labelShowAll ?? "Show full conversion",
       noData: this.dataset.labelNoData ?? "No conversion available for this variant.",
     };
+  }
+
+  /**
+   * Enabled columns, filtered and ordered to match COLUMN_ORDER. Falls back
+   * to all five when the attribute is missing or unusable.
+   */
+  _readColumns() {
+    const raw = this.dataset.columns ?? "";
+    const requested = raw
+      .split(",")
+      .map((c) => c.trim().toLowerCase())
+      .filter((c) => c.length > 0);
+    const enabled = COLUMN_ORDER.filter((c) => requested.includes(c));
+    return enabled.length > 0 ? enabled : [...COLUMN_ORDER];
+  }
+
+  _highlightMain() {
+    return this.dataset.highlightMain !== "false";
+  }
+
+  _showSource() {
+    return this.dataset.showSource !== "false";
   }
 
   _wireVariantWatcher() {
@@ -134,19 +183,13 @@ class SizeNormTable extends HTMLElement {
     );
   }
 
-  _mainValueFor(matrix, defaultScale) {
-    switch (defaultScale) {
-      case "US":
-        return { label: this._labels.us, value: matrix.us, col: "us" };
-      case "UK":
-        return { label: this._labels.uk, value: matrix.uk, col: "uk" };
-      case "CM":
-        return { label: this._labels.cm, value: matrix.cm, col: "cm" };
-      case "JP_MM":
-        return { label: this._labels.jp, value: matrix.jpMm, col: "jp" };
-      default:
-        return { label: this._labels.eu, value: matrix.eu, col: "eu" };
-    }
+  _mainColumnFor(defaultScale) {
+    return SCALE_TO_COLUMN[defaultScale] ?? "eu";
+  }
+
+  _valueFor(matrix, column) {
+    const field = COLUMN_FIELD[column];
+    return field === undefined ? null : matrix[field];
   }
 
   _displayValue(v) {
@@ -155,42 +198,37 @@ class SizeNormTable extends HTMLElement {
   }
 
   _renderHtml(matrix, sourceLabel, mode, defaultScale) {
-    const main = this._mainValueFor(matrix, defaultScale);
+    const mainCol = this._mainColumnFor(defaultScale);
+    const mainLabel = this._labels[mainCol] ?? this._labels.eu;
+    const mainValue = this._valueFor(matrix, mainCol);
     const source = sourceLabel ?? "";
+    const withSource = this._showSource() && source.length > 0;
 
     if (mode === "SINGLE_SCALE") {
-      const sourceRow = source
+      const sourceRow = withSource
         ? `<dt class="size-norm__source-label-key">${this._escape(this._labels.sourceLabel)}</dt><dd>${this._escape(source)}</dd>`
         : "";
       return `<dl class="size-norm__pair size-norm__pair--single">
-        <dt>${this._escape(main.label)}</dt>
-        <dd>${this._escape(this._displayValue(main.value))}</dd>
+        <dt>${this._escape(mainLabel)}</dt>
+        <dd>${this._escape(this._displayValue(mainValue))}</dd>
         ${sourceRow}
       </dl>`;
     }
 
-    // Column order mirrors the Liquid SSR template. JP mondopoint is the
-    // raw int mm (e.g. 240) to match the JSON metafield; CM carries the
-    // human-readable cm value. The merchant's main scale column gets the
-    // `is-main` class so the CSS can emphasize it.
-    const columns = [
-      { col: "us", label: this._labels.us, value: matrix.us },
-      { col: "eu", label: this._labels.eu, value: matrix.eu },
-      { col: "uk", label: this._labels.uk, value: matrix.uk },
-      { col: "cm", label: this._labels.cm, value: matrix.cm },
-      { col: "jp", label: this._labels.jp, value: matrix.jpMm },
-    ];
-    const ths = columns
-      .map(
-        (c) =>
-          `<th${c.col === main.col ? ' class="is-main"' : ""}>${this._escape(c.label)}</th>`,
-      )
+    // Only the merchant-enabled columns, in the canonical order. The main
+    // column gets `is-main` when highlighting is on, matching the Liquid SSR.
+    const highlight = this._highlightMain();
+    const ths = this._columns
+      .map((col) => {
+        const cls = highlight && col === mainCol ? ' class="is-main"' : "";
+        return `<th${cls}>${this._escape(this._labels[col] ?? col.toUpperCase())}</th>`;
+      })
       .join("");
-    const tds = columns
-      .map(
-        (c) =>
-          `<td${c.col === main.col ? ' class="is-main"' : ""}>${this._escape(this._displayValue(c.value))}</td>`,
-      )
+    const tds = this._columns
+      .map((col) => {
+        const cls = highlight && col === mainCol ? ' class="is-main"' : "";
+        return `<td${cls}>${this._escape(this._displayValue(this._valueFor(matrix, col)))}</td>`;
+      })
       .join("");
     const tableHtml = `
       <table class="size-norm__table">
@@ -204,13 +242,13 @@ class SizeNormTable extends HTMLElement {
 
     // MAIN_PLUS_TABLE
     const sourceSpan =
-      source && source !== this._displayValue(main.value)
+      withSource && source !== this._displayValue(mainValue)
         ? `<span class="size-norm__main-source">(${this._escape(source)})</span>`
         : "";
     return `
       <div class="size-norm__main">
-        <span class="size-norm__main-label">${this._escape(main.label)}</span>
-        <span class="size-norm__main-value">${this._escape(this._displayValue(main.value))}</span>
+        <span class="size-norm__main-label">${this._escape(mainLabel)}</span>
+        <span class="size-norm__main-value">${this._escape(this._displayValue(mainValue))}</span>
         ${sourceSpan}
       </div>
       <details class="size-norm__details">

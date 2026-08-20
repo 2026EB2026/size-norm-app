@@ -2,47 +2,129 @@
   Size Norm — PDP conversion table block.
 
   Reads variant metafields from the `size_norm` namespace (populated by the
-  webhook processor in M4) and renders a US/EU/UK/JP-mm conversion table in
-  one of three layouts (A/B/C). Sits ALONGSIDE the theme's native size
-  selector — it does not replace it.
+  webhook processor) and renders a US/EU/UK/CM/JP conversion table in one of
+  three layouts. Sits ALONGSIDE the theme's native size selector — it does
+  not replace it.
 
-  Variant change handling: each variant's matrix is embedded as data on the
-  root element; the bundled JS listens to changes on the product form's
-  `id` input and re-renders.
+  Everything visual is merchant-configurable from the theme editor:
+    - which columns appear, and their labels
+    - style preset, density, label casing, corner radius, main value size
+    - accent / text / border / highlight colours (blank = inherit theme)
+    - optional block title, source label, custom summary text
+    - custom CSS escape hatch
+
+  Colours and metrics are emitted as CSS custom properties on the root
+  element, so the stylesheet keeps working with its own defaults whenever a
+  setting is left blank.
+
+  Variant change handling: each variant's matrix is embedded as JSON on the
+  root element; the bundled JS listens to changes on the product form's `id`
+  input and re-renders using the same column configuration.
 {%- endcomment -%}
 
 {%- liquid
   assign display_mode = block.settings.display_mode | default: 'MAIN_PLUS_TABLE'
   assign fraction_format = block.settings.fraction_format | default: 'UNICODE'
   assign default_scale = block.settings.default_scale | default: 'EU'
-  assign show_fit_notes = block.settings.show_fit_notes
 
   # Per-brand display-scale override: the processor writes the merchant's
   # configured scale for this product's vendor into the product metafield
-  # `size_norm.display_scale`. When non-empty, it wins over the block's
-  # default_scale setting. Empty → fall back to the block default.
+  # `size_norm.display_scale`. When non-empty it wins over the block setting.
   assign brand_scale = product.metafields.size_norm.display_scale.value | strip
   if brand_scale != blank
     assign default_scale = brand_scale
   endif
+
+  # ── Column labels: custom setting wins over the locale string ──────────
+  assign lbl_us = 'block.scale_us' | t
+  if block.settings.label_us != blank
+    assign lbl_us = block.settings.label_us
+  endif
+  assign lbl_eu = 'block.scale_eu' | t
+  if block.settings.label_eu != blank
+    assign lbl_eu = block.settings.label_eu
+  endif
+  assign lbl_uk = 'block.scale_uk' | t
+  if block.settings.label_uk != blank
+    assign lbl_uk = block.settings.label_uk
+  endif
+  assign lbl_cm = 'block.scale_cm' | t
+  if block.settings.label_cm != blank
+    assign lbl_cm = block.settings.label_cm
+  endif
+  assign lbl_jp = 'block.scale_jp' | t
+  if block.settings.label_jp != blank
+    assign lbl_jp = block.settings.label_jp
+  endif
+
+  assign lbl_summary = 'block.show_all_conversions' | t
+  if block.settings.summary_text != blank
+    assign lbl_summary = block.settings.summary_text
+  endif
+
+  # ── Enabled columns, in fixed display order ────────────────────────────
+  assign columns = ''
+  if block.settings.show_us
+    assign columns = columns | append: 'us,'
+  endif
+  if block.settings.show_eu
+    assign columns = columns | append: 'eu,'
+  endif
+  if block.settings.show_uk
+    assign columns = columns | append: 'uk,'
+  endif
+  if block.settings.show_cm
+    assign columns = columns | append: 'cm,'
+  endif
+  if block.settings.show_jp
+    assign columns = columns | append: 'jp,'
+  endif
+  assign columns = columns | split: ',' | join: ','
+  # Safety net: never render a table with zero columns.
+  if columns == blank
+    assign columns = 'us,eu,uk,cm,jp'
+  endif
+
+  assign preset = block.settings.style_preset | default: 'minimal'
+  assign density = block.settings.density | default: 'normal'
+  assign label_style = block.settings.label_style | default: 'uppercase'
 
   assign current_variant = product.selected_or_first_available_variant
   assign current_matrix = current_variant.metafields.size_norm.matrix.value
   assign current_source = current_variant.metafields.size_norm.source_label.value
 -%}
 
+{%- comment -%}
+  Only emit a custom property when the merchant actually set it, so the
+  stylesheet's own fallback stays in play. This matters for the radius: the
+  "pills" preset falls back to a 999px pill shape, which a hard-coded 0
+  would silently flatten.
+{%- endcomment -%}
+{%- capture root_style -%}
+  {%- if block.settings.accent_color != blank -%}--sn-accent:{{ block.settings.accent_color }};{%- endif -%}
+  {%- if block.settings.text_color != blank -%}--sn-text:{{ block.settings.text_color }};{%- endif -%}
+  {%- if block.settings.border_color != blank -%}--sn-hairline:{{ block.settings.border_color }};{%- endif -%}
+  {%- if block.settings.highlight_color != blank -%}--sn-wash:{{ block.settings.highlight_color }};{%- endif -%}
+  {%- if block.settings.corner_radius > 0 -%}--sn-radius:{{ block.settings.corner_radius }}px;{%- endif -%}
+  {%- if block.settings.main_value_size -%}--sn-main-size:{{ block.settings.main_value_size }}em;{%- endif -%}
+{%- endcapture -%}
+
 <size-norm-table
-  class="size-norm"
+  class="size-norm size-norm--{{ preset }} size-norm--density-{{ density }} size-norm--labels-{{ label_style }}"
+  style="{{ root_style | strip_newlines }}"
   data-display-mode="{{ display_mode }}"
   data-fraction-format="{{ fraction_format }}"
   data-default-scale="{{ default_scale }}"
-  data-label-us="{{ 'block.scale_us' | t | escape }}"
-  data-label-eu="{{ 'block.scale_eu' | t | escape }}"
-  data-label-uk="{{ 'block.scale_uk' | t | escape }}"
-  data-label-jp="{{ 'block.scale_jp' | t | escape }}"
-  data-label-cm="{{ 'block.scale_cm' | t | escape }}"
+  data-columns="{{ columns }}"
+  data-highlight-main="{% if block.settings.highlight_main %}true{% else %}false{% endif %}"
+  data-show-source="{% if block.settings.show_source_label %}true{% else %}false{% endif %}"
+  data-label-us="{{ lbl_us | escape }}"
+  data-label-eu="{{ lbl_eu | escape }}"
+  data-label-uk="{{ lbl_uk | escape }}"
+  data-label-cm="{{ lbl_cm | escape }}"
+  data-label-jp="{{ lbl_jp | escape }}"
   data-label-source="{{ 'block.source_label' | t | escape }}"
-  data-label-show-all="{{ 'block.show_all_conversions' | t | escape }}"
+  data-label-show-all="{{ lbl_summary | escape }}"
   data-label-no-data="{{ 'block.no_conversion_available' | t | escape }}"
   {{ block.shopify_attributes }}
 >
@@ -64,6 +146,10 @@
     }
   </script>
 
+  {%- if block.settings.block_title != blank -%}
+    <p class="size-norm__title">{{ block.settings.block_title }}</p>
+  {%- endif -%}
+
   <div class="size-norm__container" data-size-norm-container>
     {%- if current_matrix -%}
       {%- render 'size-norm-render',
@@ -71,7 +157,16 @@
         source_label: current_source,
         display_mode: display_mode,
         fraction_format: fraction_format,
-        default_scale: default_scale
+        default_scale: default_scale,
+        columns: columns,
+        highlight_main: block.settings.highlight_main,
+        show_source: block.settings.show_source_label,
+        label_us: lbl_us,
+        label_eu: lbl_eu,
+        label_uk: lbl_uk,
+        label_cm: lbl_cm,
+        label_jp: lbl_jp,
+        label_summary: lbl_summary
       -%}
     {%- else -%}
       <p class="size-norm__no-data">
@@ -80,7 +175,7 @@
     {%- endif -%}
   </div>
 
-  {%- if show_fit_notes -%}
+  {%- if block.settings.show_fit_notes -%}
     <div class="size-norm__fit-notes">
       <h3 class="size-norm__fit-notes-heading">{{ 'block.fit_notes_heading' | t }}</h3>
       <div class="size-norm__fit-notes-grid">
@@ -98,6 +193,9 @@
 </size-norm-table>
 
 {{ 'size-norm.css' | asset_url | stylesheet_tag }}
+{%- if block.settings.custom_css != blank -%}
+  <style>{{ block.settings.custom_css }}</style>
+{%- endif -%}
 <script src="{{ 'size-norm.js' | asset_url }}" defer></script>
 
 {% schema %}
@@ -110,7 +208,7 @@
   "settings": [
     {
       "type": "header",
-      "content": "Rendering"
+      "content": "Layout"
     },
     {
       "type": "radio",
@@ -126,8 +224,8 @@
     {
       "type": "radio",
       "id": "default_scale",
-      "label": "Default scale to show",
-      "info": "Used in mode A and as the highlighted column in mode C.",
+      "label": "Main scale",
+      "info": "Used in mode A and highlighted in modes B and C. A per-brand rule set in the app overrides this.",
       "default": "EU",
       "options": [
         { "value": "US", "label": "US" },
@@ -150,6 +248,179 @@
     },
     {
       "type": "header",
+      "content": "Columns"
+    },
+    {
+      "type": "paragraph",
+      "content": "Choose which scales appear in the table and rename them if you prefer different wording."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_us",
+      "label": "Show US",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_eu",
+      "label": "Show EU",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_uk",
+      "label": "Show UK",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_cm",
+      "label": "Show CM",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_jp",
+      "label": "Show JP",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "label_us",
+      "label": "US label",
+      "info": "Leave empty to use the default."
+    },
+    {
+      "type": "text",
+      "id": "label_eu",
+      "label": "EU label"
+    },
+    {
+      "type": "text",
+      "id": "label_uk",
+      "label": "UK label"
+    },
+    {
+      "type": "text",
+      "id": "label_cm",
+      "label": "CM label"
+    },
+    {
+      "type": "text",
+      "id": "label_jp",
+      "label": "JP label"
+    },
+    {
+      "type": "header",
+      "content": "Appearance"
+    },
+    {
+      "type": "select",
+      "id": "style_preset",
+      "label": "Style",
+      "default": "minimal",
+      "options": [
+        { "value": "minimal", "label": "Minimal — hairline rules" },
+        { "value": "card", "label": "Card — framed with background" },
+        { "value": "bordered", "label": "Bordered — full grid" },
+        { "value": "pills", "label": "Pills — rounded cells" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "density",
+      "label": "Density",
+      "default": "normal",
+      "options": [
+        { "value": "compact", "label": "Compact" },
+        { "value": "normal", "label": "Normal" },
+        { "value": "roomy", "label": "Roomy" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "label_style",
+      "label": "Header style",
+      "default": "uppercase",
+      "options": [
+        { "value": "uppercase", "label": "Uppercase, letter-spaced" },
+        { "value": "normal", "label": "Normal case" }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "highlight_main",
+      "label": "Highlight the main scale column",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "corner_radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "main_value_size",
+      "label": "Main value size",
+      "min": 0.9,
+      "max": 2.4,
+      "step": 0.1,
+      "unit": "em",
+      "default": 1.5
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent colour",
+      "info": "Used for the highlighted column. Leave empty to inherit the theme text colour."
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text colour",
+      "info": "Leave empty to inherit from the theme."
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border colour",
+      "info": "Leave empty for an automatic hairline."
+    },
+    {
+      "type": "color",
+      "id": "highlight_color",
+      "label": "Highlight background",
+      "info": "Background of the main column. Leave empty for a subtle automatic wash."
+    },
+    {
+      "type": "header",
+      "content": "Text"
+    },
+    {
+      "type": "text",
+      "id": "block_title",
+      "label": "Block title",
+      "info": "Optional heading shown above the conversion. Leave empty to hide."
+    },
+    {
+      "type": "text",
+      "id": "summary_text",
+      "label": "Expand link text",
+      "info": "Shown in mode C. Leave empty to use the default."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_source_label",
+      "label": "Show the original size label",
+      "default": true
+    },
+    {
+      "type": "header",
       "content": "Fit notes"
     },
     {
@@ -169,6 +440,16 @@
       "id": "fit_notes_en",
       "label": "Fit notes (English)",
       "info": "Leave empty to use the default translation."
+    },
+    {
+      "type": "header",
+      "content": "Advanced"
+    },
+    {
+      "type": "textarea",
+      "id": "custom_css",
+      "label": "Custom CSS",
+      "info": "Scope your selectors to .size-norm — e.g. .size-norm__table td { font-weight: 700; }"
     }
   ]
 }
