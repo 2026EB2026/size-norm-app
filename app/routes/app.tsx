@@ -25,6 +25,7 @@ export default function App() {
       <ui-nav-menu>
         <a href="/app" rel="home">Home</a>
         <a href="/app/alerts">Alert</a>
+        <a href="/app/diagnose">Diagnostica</a>
         <a href="/app/scales">Scale Taglie</a>
         <a href="/app/tables">Conversion Tables</a>
         <a href="/app/bulk">Bulk re-scan</a>

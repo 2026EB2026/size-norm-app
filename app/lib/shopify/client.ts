@@ -9,6 +9,7 @@ import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
 
 import {
   CREATE_METAFIELD_DEFINITION,
+  GET_PRODUCT_DIAGNOSTICS,
   GET_PRODUCT_FOR_PROCESSING,
   SET_METAFIELDS,
   UPDATE_PRODUCT,
@@ -108,6 +109,65 @@ export async function getProductForProcessing(
     scaleSigla: p.scaleSigla?.value ?? null,
     ageCategory: p.ageCategory?.value ?? null,
     variants: p.variants.nodes,
+  };
+}
+
+/** Current `size_norm` metafield state for a product, for diagnostics. */
+export interface ProductMetafieldState {
+  status: "ACTIVE" | "DRAFT" | "ARCHIVED";
+  conversionStatus: string | null;
+  lastProcessedAt: string | null;
+  displayScale: string | null;
+  /** Variant id → true when a `size_norm.matrix` value is present. */
+  variantsWithMatrix: Record<string, boolean>;
+}
+
+/**
+ * Reads the metafields previously written by the processor. Used only by
+ * the diagnostics page; never part of the processing path.
+ */
+export async function getProductMetafieldState(
+  admin: Admin,
+  productGid: string,
+): Promise<ProductMetafieldState | null> {
+  const response = await admin.graphql(GET_PRODUCT_DIAGNOSTICS, {
+    variables: { id: productGid },
+  });
+  const json = (await response.json()) as {
+    data?: {
+      product?: {
+        status: "ACTIVE" | "DRAFT" | "ARCHIVED";
+        conversionStatus: { value: string } | null;
+        lastProcessedAt: { value: string } | null;
+        displayScale: { value: string } | null;
+        variants: {
+          nodes: { id: string; matrix: { value: string } | null }[];
+        };
+      };
+    };
+    errors?: { message: string }[];
+  };
+  if (json.errors !== undefined && json.errors.length > 0) {
+    throw new Error(
+      `GraphQL errors reading diagnostics: ${json.errors
+        .map((e) => e.message)
+        .join("; ")}`,
+    );
+  }
+  const p = json.data?.product;
+  if (p === undefined || p === null) return null;
+
+  const variantsWithMatrix: Record<string, boolean> = {};
+  for (const v of p.variants.nodes) {
+    variantsWithMatrix[v.id] =
+      v.matrix !== null && v.matrix.value.trim().length > 0;
+  }
+  return {
+    status: p.status,
+    conversionStatus: p.conversionStatus?.value ?? null,
+    lastProcessedAt: p.lastProcessedAt?.value ?? null,
+    displayScale: p.displayScale?.value ?? null,
+    variantsWithMatrix,
   };
 }
 

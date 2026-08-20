@@ -37,6 +37,38 @@ export const GET_PRODUCT_FOR_PROCESSING = `#graphql
 ` as const;
 
 /**
+ * Diagnostics-only query: reads the *current* `size_norm` metafield state
+ * written by previous runs, so the admin can distinguish "conversion never
+ * ran / failed" from "conversion is fine but the theme block is missing or
+ * misplaced on the product template".
+ */
+export const GET_PRODUCT_DIAGNOSTICS = `#graphql
+  query GetProductDiagnostics($id: ID!) {
+    product(id: $id) {
+      id
+      status
+      conversionStatus: metafield(namespace: "size_norm", key: "conversion_status") {
+        value
+      }
+      lastProcessedAt: metafield(namespace: "size_norm", key: "last_processed_at") {
+        value
+      }
+      displayScale: metafield(namespace: "size_norm", key: "display_scale") {
+        value
+      }
+      variants(first: 100) {
+        nodes {
+          id
+          matrix: metafield(namespace: "size_norm", key: "matrix") {
+            value
+          }
+        }
+      }
+    }
+  }
+` as const;
+
+/**
  * Sets multiple metafields in a single call. We use this for both product-
  * and variant-level metafields by including the right `ownerId` per item.
  */

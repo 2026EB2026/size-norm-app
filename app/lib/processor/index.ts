@@ -71,7 +71,7 @@ function prismaTableToEngine(row: PrismaConversionTableRow): ConversionTable {
  * (lowercase, dashes, "kids" suffix stripped). Keep in sync with
  * `_scripts/parse_brand_scales.py:slugify`.
  */
-function slugifyBrand(vendor: string): string {
+export function slugifyBrand(vendor: string): string {
   return vendor
     .toLowerCase()
     .trim()
@@ -117,7 +117,7 @@ export function normalizeGender(raw: string | null): string | null {
  * product's vendor. Provides "always-something" coverage for the common
  * Italian-retail genders.
  */
-function atelierFallbackByGender(
+export function atelierFallbackByGender(
   gender: string | null,
 ): string | null {
   // Caller is expected to pass the normalized gender — this function only
@@ -143,7 +143,7 @@ function atelierFallbackByGender(
  * values (the orchestrator combines metafield + text inference before
  * calling this).
  */
-function resolveCandidateSigle(product: {
+export function resolveCandidateSigle(product: {
   vendor: string | null;
   scaleSigla: string | null;
   gender: string | null;

@@ -146,18 +146,27 @@ function toEngineGender(prismaGender: SizeScale["gender"]): Gender {
   return prismaGender;
 }
 
-function isFootwear(
-  product: ProcessorInput["product"],
-  whitelist: readonly string[],
+/**
+ * True when `product.product_type` is in the footwear whitelist. Exported
+ * so the diagnostics page can report which of the two footwear signals
+ * (product type vs title/tag keywords) let the product through.
+ */
+export function isFootwear(
+  product: { productType: string | null },
+  whitelist: readonly string[] = DEFAULT_FOOTWEAR_PRODUCT_TYPES,
 ): boolean {
   if (product.productType === null) return false;
   const lower = product.productType.toLowerCase();
   return whitelist.some((t) => t.toLowerCase() === lower);
 }
 
-function findSizeOption(
-  variant: ProcessorInput["product"]["variants"][number],
-  optionNames: readonly string[],
+/**
+ * Returns the value of the variant option that holds the size, or null when
+ * none of the configured option names match. Exported for diagnostics.
+ */
+export function findSizeOption(
+  variant: { selectedOptions: { name: string; value: string }[] },
+  optionNames: readonly string[] = DEFAULT_SIZE_OPTION_NAMES,
 ): string | null {
   for (const opt of variant.selectedOptions) {
     if (optionNames.some((n) => n.toLowerCase() === opt.name.toLowerCase())) {
