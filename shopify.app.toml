@@ -33,6 +33,24 @@ api_version = "2026-04"
   uri = "/webhooks/products/update"
   topics = ["products/update"]
 
+  # ── Mandatory compliance topics (required for public distribution) ──
+  # These use `compliance_topics`, not `topics`. Shopify calls them even
+  # when the app is uninstalled, so the handlers must not assume a session.
+  # Handled by: /app/routes/webhooks.customers.data_request.tsx
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/data_request"
+  compliance_topics = [ "customers/data_request" ]
+
+  # Handled by: /app/routes/webhooks.customers.redact.tsx
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/redact"
+  compliance_topics = [ "customers/redact" ]
+
+  # Handled by: /app/routes/webhooks.shop.redact.tsx
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/shop/redact"
+  compliance_topics = [ "shop/redact" ]
+
 [auth]
 redirect_urls = [ "https://size-norm-app.vercel.app/auth/callback" ]
 
