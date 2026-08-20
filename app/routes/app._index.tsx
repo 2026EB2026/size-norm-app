@@ -4,6 +4,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
+import { themeEditorDeepLink } from "../lib/theme-deep-link";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -32,6 +33,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return {
     shopDomain,
+    themeLink: themeEditorDeepLink(shopDomain),
     stats: {
       scalesCount,
       tablesCount,
@@ -102,7 +104,7 @@ function StatCard(props: {
 }
 
 export default function Index() {
-  const { stats, lastJob, setup } = useLoaderData<typeof loader>();
+  const { stats, lastJob, setup, themeLink } = useLoaderData<typeof loader>();
 
   return (
     <s-page heading="Size Norm">
@@ -171,9 +173,10 @@ export default function Index() {
             metafield.
           </s-list-item>
           <s-list-item>
-            Il blocco <s-text type="strong">Size Norm — Sizes</s-text> nel
-            theme editor mostra la conversione in PDP. La scala principale è
-            configurabile per brand da Settings.
+            Aggiungi il blocco <s-text type="strong">Size Norm — Sizes</s-text>{" "}
+            alla pagina prodotto del tema: è il passaggio che fa comparire la
+            tabella in vetrina. Aspetto, colonne e colori si configurano lì;
+            la scala principale può variare per brand da Impostazioni.
           </s-list-item>
           <s-list-item>
             Se una conversione fallisce, il prodotto va in Draft e compare un
@@ -203,12 +206,43 @@ export default function Index() {
             <s-text>Scala principale per brand</s-text>
           </s-stack>
           <s-divider />
-          <s-button href="/app/bulk" variant="primary">
+          {themeLink !== null && (
+            <s-button href={themeLink} target="_blank" variant="primary">
+              Aggiungi il blocco al tema
+            </s-button>
+          )}
+          <s-button href="/app/bulk" variant="secondary">
             Avvia re-scan catalogo
           </s-button>
           <s-button href="/app/settings" variant="secondary">
-            Settings
+            Impostazioni
           </s-button>
+        </s-stack>
+      </s-section>
+
+      <s-section slot="aside" heading="Attivazione in vetrina">
+        <s-stack direction="block" gap="base">
+          <s-paragraph color="subdued">
+            La conversione compare sulla pagina prodotto solo dopo aver
+            aggiunto il blocco al tema. Il pulsante qui sopra apre
+            l&apos;editor con il blocco già pronto da inserire; in
+            alternativa, manualmente:
+          </s-paragraph>
+          <s-ordered-list>
+            <s-list-item>
+              Negozio online → Temi → <s-text type="strong">Personalizza</s-text>
+            </s-list-item>
+            <s-list-item>
+              Seleziona il template <s-text type="strong">Prodotto</s-text>
+            </s-list-item>
+            <s-list-item>
+              <s-text type="strong">Aggiungi blocco</s-text> → sezione App →{" "}
+              <s-text type="strong">Size Norm — Sizes</s-text>
+            </s-list-item>
+            <s-list-item>
+              Posizionalo dove preferisci e salva
+            </s-list-item>
+          </s-ordered-list>
         </s-stack>
       </s-section>
 

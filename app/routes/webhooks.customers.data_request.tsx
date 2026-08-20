@@ -14,7 +14,7 @@ import { authenticate } from "../shopify.server";
  * per-product processing snapshots, conversion alerts and bulk-job records.
  * None of it is keyed to, derived from, or joinable with a customer, an
  * order, or an email address; the app never requests customer or order
- * scopes (see `scopes` in shopify.app.toml: products + metaobjects only).
+ * scopes (see `scopes` in shopify.app.toml: product scopes only).
  *
  * So there is nothing to disclose: we log the request for auditability and
  * acknowledge. If customer-linked data is ever introduced, this handler must

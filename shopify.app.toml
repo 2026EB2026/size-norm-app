@@ -8,7 +8,18 @@ embedded = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_products,write_products,write_metaobjects,write_metaobject_definitions"
+#
+# Keep this list minimal — App Store review asks apps to justify every scope,
+# and a shorter permission prompt converts better at install.
+#
+# write_products covers everything we do: reading products/variants, writing
+# the size_norm metafields, creating those metafield definitions (access to
+# metafield definitions derives from the owner resource, PRODUCT and
+# PRODUCTVARIANT here), and flipping status/tags on conversion failure.
+#
+# The metaobject scopes that used to be here were never exercised by any code
+# path — metaobjects are a separate feature this app doesn't use.
+scopes = "read_products,write_products"
 
 [webhooks]
 api_version = "2026-04"
