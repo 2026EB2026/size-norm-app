@@ -10,6 +10,7 @@ import { z } from "zod";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import {
+  getProductForProcessing,
   setMetafields,
   updateProductStatusAndTags,
   type MetafieldWrite,
@@ -206,7 +207,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     if (remaining === 0) {
       // We need current tags to compute the new tag list. Fetch via the
       // existing Shopify client; could be optimized into a single mutation.
-      const { getProductForProcessing } = await import("../lib/shopify/client");
       const product = await getProductForProcessing(admin, alert.productId);
       const newTags = applyTagDelta(product.tags, [], [SIZE_NORM_ERROR_TAG]);
       await updateProductStatusAndTags(admin, alert.productId, {
