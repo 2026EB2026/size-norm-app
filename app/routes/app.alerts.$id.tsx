@@ -17,6 +17,7 @@ import {
 } from "../lib/shopify/client";
 import {
   applyTagDelta,
+  readShopProcessingSettings,
   SIZE_NORM_ERROR_TAG,
 } from "../lib/processor/apply-result";
 import { runProcessor } from "../lib/processor";
@@ -195,8 +196,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       data: { resolvedAt: new Date(), resolvedBy: "manual_override" },
     });
 
-    // 3. If no other unresolved alerts on this product, set ACTIVE +
-    //    remove error tag.
+    // 3. If no other unresolved alerts remain on this product, clear the
+    //    error tag — and re-publish it only when the merchant has opted into
+    //    letting the app manage publication status. In safe mode we still
+    //    drop the tag but leave the status alone: if the product was already
+    //    live, forcing ACTIVE is a no-op, and if the merchant had it in
+    //    draft on purpose, overriding a size is no reason to publish it.
     const remaining = await prisma.conversionAlert.count({
       where: {
         shopDomain: session.shop,
@@ -205,12 +210,16 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       },
     });
     if (remaining === 0) {
+      const { manageProductStatus } = await readShopProcessingSettings(
+        prisma,
+        session.shop,
+      );
       // We need current tags to compute the new tag list. Fetch via the
       // existing Shopify client; could be optimized into a single mutation.
       const product = await getProductForProcessing(admin, alert.productId);
       const newTags = applyTagDelta(product.tags, [], [SIZE_NORM_ERROR_TAG]);
       await updateProductStatusAndTags(admin, alert.productId, {
-        status: "ACTIVE",
+        ...(manageProductStatus ? { status: "ACTIVE" as const } : {}),
         tags: newTags,
       });
       await setMetafields(admin, [

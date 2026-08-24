@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   applyTagDelta,
   computeProductHash,
+  resolveBrandDisplayScale,
+  resolveProductStatusPatch,
   SIZE_NORM_ERROR_TAG,
 } from "../../app/lib/processor/apply-result";
 import type { ShopifyProduct } from "../../app/lib/shopify/client";
@@ -123,5 +125,91 @@ describe("computeProductHash", () => {
     ];
     expect(computeProductHash(p2)).toBe(computeProductHash(p3));
     expect(computeProductHash(p1)).not.toBe(computeProductHash(p2));
+  });
+});
+
+describe("resolveProductStatusPatch", () => {
+  const tags = ["a", "b"];
+
+  it("omits status entirely in safe mode (success)", () => {
+    const patch = resolveProductStatusPatch("success", tags, [], [], false);
+    expect(patch.status).toBeUndefined();
+    expect("status" in patch).toBe(false);
+  });
+
+  it("omits status entirely in safe mode (draft)", () => {
+    const patch = resolveProductStatusPatch("draft", tags, [], [], false);
+    expect(patch.status).toBeUndefined();
+  });
+
+  it("sets ACTIVE on success when the merchant opted in", () => {
+    expect(
+      resolveProductStatusPatch("success", tags, [], [], true).status,
+    ).toBe("ACTIVE");
+  });
+
+  it("sets DRAFT on failure when the merchant opted in", () => {
+    expect(resolveProductStatusPatch("draft", tags, [], [], true).status).toBe(
+      "DRAFT",
+    );
+  });
+
+  it("applies the tag delta regardless of safe mode", () => {
+    const safe = resolveProductStatusPatch(
+      "draft",
+      ["keep"],
+      [SIZE_NORM_ERROR_TAG],
+      [],
+      false,
+    );
+    const managed = resolveProductStatusPatch(
+      "draft",
+      ["keep"],
+      [SIZE_NORM_ERROR_TAG],
+      [],
+      true,
+    );
+    expect(safe.tags).toEqual(["keep", SIZE_NORM_ERROR_TAG]);
+    expect(managed.tags).toEqual(["keep", SIZE_NORM_ERROR_TAG]);
+  });
+
+  it("removes the error tag on success in safe mode too", () => {
+    const patch = resolveProductStatusPatch(
+      "success",
+      ["keep", SIZE_NORM_ERROR_TAG],
+      [],
+      [SIZE_NORM_ERROR_TAG],
+      false,
+    );
+    expect(patch.tags).toEqual(["keep"]);
+  });
+});
+
+describe("resolveBrandDisplayScale", () => {
+  it("returns the configured scale for a slugified vendor", () => {
+    expect(resolveBrandDisplayScale({ asics: "EU" }, "ASICS")).toBe("EU");
+  });
+
+  it("slugifies multi-word vendors", () => {
+    expect(
+      resolveBrandDisplayScale({ "new-balance": "US" }, "New Balance"),
+    ).toBe("US");
+  });
+
+  it("returns empty string when the brand has no rule", () => {
+    expect(resolveBrandDisplayScale({ asics: "EU" }, "Vans")).toBe("");
+  });
+
+  it("returns empty string when no rules are set at all", () => {
+    expect(resolveBrandDisplayScale(null, "ASICS")).toBe("");
+  });
+
+  it("returns empty string for a missing vendor", () => {
+    expect(resolveBrandDisplayScale({ asics: "EU" }, null)).toBe("");
+    expect(resolveBrandDisplayScale({ asics: "EU" }, "   ")).toBe("");
+  });
+
+  it("ignores non-string values", () => {
+    expect(resolveBrandDisplayScale({ asics: 42 }, "ASICS")).toBe("");
   });
 });

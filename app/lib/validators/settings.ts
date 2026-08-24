@@ -37,6 +37,12 @@ export const settingsFormSchema = z.object({
   // JSON-encoded `Record<brand-slug, SourceScale>`. Empty string → no
   // overrides; null DB-side.
   brandDisplayScalesJson: z.string().default(""),
+  // Unchecked checkboxes are simply absent from the form body, so anything
+  // other than the checked value means off.
+  manageProductStatus: z
+    .union([z.literal("on"), z.literal("true"), z.null(), z.undefined()])
+    .transform((v) => v === "on" || v === "true")
+    .catch(false),
 });
 
 export type SettingsFormInput = z.infer<typeof settingsFormSchema>;

@@ -21,6 +21,37 @@ import {
   type ProcessingResult,
 } from "./process-product";
 
+/** The product mutation a processing run should apply. */
+export interface ProductStatusPatch {
+  /** Omitted entirely when safe mode is on — status is left untouched. */
+  status?: "ACTIVE" | "DRAFT" | "ARCHIVED";
+  tags: string[];
+}
+
+/**
+ * Decides what to write back to the product itself.
+ *
+ * Tags always travel: the `size-norm:error` tag is how merchants filter
+ * broken products in the Shopify admin, and it's non-destructive.
+ *
+ * Status is different. Forcing it is genuinely useful on a curated catalogue
+ * — a shoe whose size table is wrong shouldn't be buyable — but on a large
+ * live store the same rule unpublishes sellable products and publishes ones
+ * the merchant was still preparing. So it's opt-in per shop
+ * (`Shop.manageProductStatus`), and when off we simply omit the field.
+ */
+export function resolveProductStatusPatch(
+  resultKind: "success" | "draft",
+  currentTags: string[],
+  tagsToAdd: string[],
+  tagsToRemove: string[],
+  manageProductStatus: boolean,
+): ProductStatusPatch {
+  const tags = applyTagDelta(currentTags, tagsToAdd, tagsToRemove);
+  if (!manageProductStatus) return { tags };
+  return { status: resultKind === "success" ? "ACTIVE" : "DRAFT", tags };
+}
+
 /**
  * Slugifies a vendor string to match the convention used by the per-brand
  * settings UI (lowercase, dashes, trimmed). Keep in sync with
@@ -35,28 +66,53 @@ function slugifyBrand(vendor: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** The per-shop settings a processing run needs. */
+export interface ShopProcessingSettings {
+  /** Record<brand-slug, display scale>, or null when unset. */
+  brandDisplayScales: Record<string, unknown> | null;
+  manageProductStatus: boolean;
+}
+
 /**
- * Looks up the merchant's per-brand display-scale rule for the given
- * vendor. Returns the SourceScale value as a string (e.g. "EU"), or the
- * empty string when no rule is set — the theme extension treats the
- * empty string as "fall back to the block's default_scale".
+ * Reads the settings one processing run depends on, in a single query.
+ * Falls back to the safe defaults when the shop row is missing (which can
+ * happen if a webhook races ahead of the first authenticated visit).
  */
-export async function resolveBrandDisplayScale(
+export async function readShopProcessingSettings(
   prisma: PrismaClient,
   shopDomain: string,
-  vendor: string | null,
-): Promise<string> {
-  if (vendor === null || vendor.trim().length === 0) return "";
-  const brand = slugifyBrand(vendor);
-  if (brand.length === 0) return "";
+): Promise<ShopProcessingSettings> {
   const shop = await prisma.shop.findUnique({
     where: { shopDomain },
-    select: { brandDisplayScales: true },
+    select: { brandDisplayScales: true, manageProductStatus: true },
   });
-  if (shop === null) return "";
-  const map = shop.brandDisplayScales as Record<string, unknown> | null;
-  if (map === null) return "";
-  const value = map[brand];
+  if (shop === null) {
+    return { brandDisplayScales: null, manageProductStatus: false };
+  }
+  return {
+    brandDisplayScales: shop.brandDisplayScales as Record<
+      string,
+      unknown
+    > | null,
+    manageProductStatus: shop.manageProductStatus,
+  };
+}
+
+/**
+ * Resolves the merchant's per-brand display-scale rule for the given vendor.
+ * Returns the scale as a string (e.g. "EU"), or the empty string when no
+ * rule applies — the theme extension reads the empty string as "fall back to
+ * the block's default_scale".
+ */
+export function resolveBrandDisplayScale(
+  brandDisplayScales: Record<string, unknown> | null,
+  vendor: string | null,
+): string {
+  if (vendor === null || vendor.trim().length === 0) return "";
+  if (brandDisplayScales === null) return "";
+  const brand = slugifyBrand(vendor);
+  if (brand.length === 0) return "";
+  const value = brandDisplayScales[brand];
   if (typeof value !== "string" || value.trim().length === 0) return "";
   return value.trim();
 }
@@ -229,9 +285,9 @@ export async function applyProcessingResult(
   //     write the metafield even if the brand isn't in the map — using the
   //     empty string in that case — so previously-set values get cleared
   //     when the merchant removes a brand rule.
-  const displayScaleValue = await resolveBrandDisplayScale(
-    prisma,
-    shopDomain,
+  const settings = await readShopProcessingSettings(prisma, shopDomain);
+  const displayScaleValue = resolveBrandDisplayScale(
+    settings.brandDisplayScales,
     product.vendor,
   );
   metafieldWrites.push({
@@ -247,12 +303,16 @@ export async function applyProcessingResult(
     await setMetafields(admin, metafieldWrites);
   }
 
-  // 4. Status + tags update.
-  const newTags = applyTagDelta(product.tags, result.tagsToAdd, result.tagsToRemove);
-  await updateProductStatusAndTags(admin, product.id, {
-    status: result.kind === "success" ? "ACTIVE" : "DRAFT",
-    tags: newTags,
-  });
+  // 4. Tags always; status only when the merchant opted in (see
+  //    resolveProductStatusPatch — safe mode is the default).
+  const patch = resolveProductStatusPatch(
+    result.kind,
+    product.tags,
+    result.tagsToAdd,
+    result.tagsToRemove,
+    settings.manageProductStatus,
+  );
+  await updateProductStatusAndTags(admin, product.id, patch);
 
   // 5. Alerts: replace the unresolved set for this product.
   await prisma.conversionAlert.deleteMany({

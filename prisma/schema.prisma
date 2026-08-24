@@ -39,6 +39,18 @@ model Shop {
   // by the processor's auto-derive (`slugifyBrand`).
   brandDisplayScales Json?
   fractionFormat    FractionFormat @default(UNICODE)
+  // When false (the default), processing never changes a product's
+  // publication status: it writes metafields, applies the error tag and
+  // records alerts, but publishing stays the merchant's decision. Enabling
+  // it restores the stricter behaviour — a product whose conversion fails is
+  // set to DRAFT so it can't sell with wrong size data, and one that
+  // converts cleanly is set to ACTIVE.
+  //
+  // Defaults to off deliberately: on a large live catalogue, an app that
+  // silently unpublishes products a shopper could have bought (or publishes
+  // ones the merchant was still preparing) does far more damage than a
+  // missing conversion table.
+  manageProductStatus Boolean @default(false)
 
   sizeScales        SizeScale[]
   conversionTables  ConversionTable[]

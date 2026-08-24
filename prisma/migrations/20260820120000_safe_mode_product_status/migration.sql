@@ -1,0 +1,12 @@
+-- Safe mode: opt-in control over product publication status.
+--
+-- When false (the default, and the value existing rows get) the processor
+-- never changes a product's status — it only writes metafields, applies the
+-- error tag and records alerts. Enabling it restores the stricter behaviour
+-- (failed conversion -> DRAFT, clean conversion -> ACTIVE).
+--
+-- Defaulting to false is a deliberate behaviour change for already-installed
+-- shops: silently unpublishing sellable products on a live catalogue is worse
+-- than leaving a product published with an incomplete size table, and the
+-- alerts surface the problem either way.
+ALTER TABLE "Shop" ADD COLUMN "manageProductStatus" BOOLEAN NOT NULL DEFAULT false;

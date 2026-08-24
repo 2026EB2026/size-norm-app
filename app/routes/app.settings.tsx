@@ -42,6 +42,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       globalDisplayMode: shop.globalDisplayMode,
       globalScale: shop.globalScale,
       fractionFormat: shop.fractionFormat,
+      manageProductStatus: shop.manageProductStatus,
       marketScalesJson:
         shop.marketScales !== null
           ? JSON.stringify(shop.marketScales, null, 2)
@@ -65,6 +66,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     fractionFormat: formData.get("fractionFormat"),
     marketScalesJson: formData.get("marketScalesJson") ?? "",
     brandDisplayScalesJson: formData.get("brandDisplayScalesJson") ?? "",
+    manageProductStatus: formData.get("manageProductStatus"),
   });
   if (parsed.success === false) {
     return { errors: parsed.error.flatten().fieldErrors };
@@ -108,6 +110,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       fractionFormat: parsed.data.fractionFormat,
       marketScales: marketScales as never,
       brandDisplayScales: brandDisplayScales as never,
+      manageProductStatus: parsed.data.manageProductStatus,
     },
   });
 
@@ -177,6 +180,43 @@ export default function Settings() {
               <s-option value="DECIMAL">Decimale (.5)</s-option>
               <s-option value="ASCII">ASCII (1/2)</s-option>
             </s-select>
+          </s-stack>
+        </s-section>
+
+        <s-section heading="Pubblicazione prodotti">
+          <s-stack direction="block" gap="base">
+            {settings.manageProductStatus ? (
+              <s-banner heading="L'app può depubblicare prodotti" tone="warning">
+                <s-text>
+                  Con questa opzione attiva, un prodotto la cui conversione
+                  fallisce viene messo in bozza — quindi sparisce dalla
+                  vetrina — e uno che converte correttamente viene pubblicato,
+                  anche se lo tenevi in bozza di proposito. Su un catalogo
+                  ampio e live, valuta se disattivarla.
+                </s-text>
+              </s-banner>
+            ) : (
+              <s-banner heading="Modalità sicura attiva" tone="success">
+                <s-text>
+                  L&apos;app non cambia mai lo stato di pubblicazione dei
+                  prodotti: scrive le conversioni, applica il tag di errore e
+                  registra gli alert, ma pubblicare o ritirare resta una tua
+                  decisione.
+                </s-text>
+              </s-banner>
+            )}
+            <s-checkbox
+              name="manageProductStatus"
+              value="on"
+              label="Consenti all'app di gestire lo stato di pubblicazione"
+              details="Fallita → bozza, riuscita → attivo. Lascia disattivato sui cataloghi in produzione."
+              defaultChecked={settings.manageProductStatus}
+            />
+            <s-paragraph color="subdued">
+              Il tag <s-text type="strong">size-norm:error</s-text> viene
+              applicato in entrambi i casi: puoi usarlo per filtrare i
+              prodotti da sistemare nell&apos;elenco prodotti di Shopify.
+            </s-paragraph>
           </s-stack>
         </s-section>
 
