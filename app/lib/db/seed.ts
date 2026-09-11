@@ -2,6 +2,7 @@ import {
   ATELIER_SCALES_V1,
   BRAND_CM_OVERRIDES_V1,
   BRAND_CONVERSION_TABLES_V1,
+  BRAND_OFFICIAL_TABLES_V1,
   BRAND_SCALES_V1,
   GENERIC_CONVERSION_TABLES_V1,
 } from "../conversion";
@@ -51,7 +52,7 @@ const metafieldDefsEnsuredInProcess = new Set<string>();
  * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
  * scales seed or its CM-overrides companion file.
  */
-const BRAND_SEED_REVISION = "v4-native-labels-win";
+const BRAND_SEED_REVISION = "v5-adidas-official-chart";
 const brandScalesSeededInProcess = new Set<string>();
 
 /**
@@ -142,6 +143,45 @@ function enrichAliasesFromTable(
   }
 
   return aliases;
+}
+
+/**
+ * Upserts one official manufacturer chart: a conversion table carrying a
+ * `brand`, attached to an existing scale.
+ *
+ * Keyed on (scaleSigla, brand) rather than (scaleSigla, null), so it sits
+ * alongside the generic table instead of replacing it — `lookupConversion`
+ * picks the brand one for matching vendors and falls back to the generic one
+ * for everyone else, and for rows the manufacturer doesn't publish.
+ *
+ * A merchant who has marked the table validated (`isSeed = false`) owns it
+ * from then on and the seed stops touching its mappings.
+ */
+async function upsertBrandOfficialTable(
+  tx: typeof prisma,
+  shopDomain: string,
+  table: ConversionTable,
+): Promise<void> {
+  const existing = await tx.conversionTable.findFirst({
+    where: { shopDomain, scaleSigla: table.scaleSigla, brand: table.brand },
+  });
+  if (existing !== null) {
+    if (!existing.isSeed) return;
+    await tx.conversionTable.update({
+      where: { id: existing.id },
+      data: { mappings: table.mappings as never },
+    });
+    return;
+  }
+  await tx.conversionTable.create({
+    data: {
+      shopDomain,
+      scaleSigla: table.scaleSigla,
+      brand: table.brand,
+      isSeed: true,
+      mappings: table.mappings as never,
+    },
+  });
 }
 
 /**
@@ -324,6 +364,12 @@ export async function ensureSeed(
                   ),
                 };
           await upsertScale(tx as typeof prisma, shopDomain, scale, table, null);
+        }
+        // Official manufacturer charts, attached to an existing scale for
+        // one vendor. Unlike the generic tables these carry a `brand`, so
+        // lookupConversion prefers them for that vendor's products.
+        for (const table of BRAND_OFFICIAL_TABLES_V1) {
+          await upsertBrandOfficialTable(tx as typeof prisma, shopDomain, table);
         }
       });
       brandScalesSeededInProcess.add(cacheKey);

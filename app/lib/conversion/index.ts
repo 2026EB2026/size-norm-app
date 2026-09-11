@@ -40,6 +40,10 @@ export {
 } from "./brand-scales-seed";
 
 export { BRAND_CM_OVERRIDES_V1 } from "./brand-cm-overrides";
+export {
+  BRAND_OFFICIAL_TABLES_V1,
+  BRANDS_WITH_OFFICIAL_TABLE,
+} from "./brand-official-tables";
 
 export {
   MEN_MASTER,
