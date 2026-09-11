@@ -122,3 +122,37 @@ describe("sizeScaleFormSchema", () => {
     }
   });
 });
+
+describe("sizeScaleFormSchema — tagValue", () => {
+  const base = {
+    sigla: "G",
+    name: "Scarpe Uomo IT",
+    gender: "MEN",
+    sourceScale: "EU",
+    labelsRaw: "39\n40",
+    aliasesRaw: "",
+  };
+
+  it("defaults to an empty string when the field is absent", () => {
+    const r = sizeScaleFormSchema.safeParse(base);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.tagValue).toBe("");
+  });
+
+  it("keeps the ERP value verbatim (normalization happens on save)", () => {
+    const r = sizeScaleFormSchema.safeParse({
+      ...base,
+      tagValue: "  Scarpe Uomo IT  ",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.tagValue).toBe("Scarpe Uomo IT");
+  });
+
+  it("rejects a value over 120 characters", () => {
+    const r = sizeScaleFormSchema.safeParse({
+      ...base,
+      tagValue: "x".repeat(121),
+    });
+    expect(r.success).toBe(false);
+  });
+});

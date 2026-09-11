@@ -130,3 +130,49 @@ export const CREATE_METAFIELD_DEFINITION = `#graphql
     }
   }
 ` as const;
+
+/**
+ * Reads the storefront access of the app's own definitions for one owner type.
+ * Used to repair installs created before storefront access was requested: a
+ * definition with `storefront: NONE` is invisible to Liquid, so the PDP block
+ * renders its empty state on the live storefront no matter what the processor
+ * wrote.
+ */
+export const GET_METAFIELD_DEFINITION_ACCESS = `#graphql
+  query GetMetafieldDefinitionAccess(
+    $ownerType: MetafieldOwnerType!
+    $namespace: String!
+  ) {
+    metafieldDefinitions(first: 50, ownerType: $ownerType, namespace: $namespace) {
+      nodes {
+        key
+        access {
+          storefront
+        }
+      }
+    }
+  }
+` as const;
+
+/**
+ * Grants (or revokes) Storefront API / Liquid read access on an existing
+ * definition. Identified by namespace + key + ownerType, so it is safe to
+ * re-run.
+ */
+export const UPDATE_METAFIELD_DEFINITION_ACCESS = `#graphql
+  mutation UpdateMetafieldDefinitionAccess(
+    $definition: MetafieldDefinitionUpdateInput!
+  ) {
+    metafieldDefinitionUpdate(definition: $definition) {
+      updatedDefinition {
+        id
+        key
+      }
+      userErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+` as const;

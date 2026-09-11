@@ -9,11 +9,16 @@ import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
 
 import {
   CREATE_METAFIELD_DEFINITION,
+  GET_METAFIELD_DEFINITION_ACCESS,
   GET_PRODUCT_DIAGNOSTICS,
   GET_PRODUCT_FOR_PROCESSING,
   SET_METAFIELDS,
+  UPDATE_METAFIELD_DEFINITION_ACCESS,
   UPDATE_PRODUCT,
 } from "./queries";
+
+/** Namespace every metafield this app owns lives in. */
+export const METAFIELD_NAMESPACE = "size_norm";
 
 /**
  * The `admin` object returned by `authenticate.admin(request)` — re-exported
@@ -293,10 +298,18 @@ export async function createMetafieldDefinitionIdempotent(
     description?: string;
     type: string;
     ownerType: "PRODUCT" | "PRODUCTVARIANT";
+    /** Grant Liquid / Storefront API read access. */
+    storefront?: boolean;
   },
 ): Promise<{ created: boolean }> {
+  const { storefront, ...rest } = definition;
   const response = await admin.graphql(CREATE_METAFIELD_DEFINITION, {
-    variables: { definition },
+    variables: {
+      definition:
+        storefront === true
+          ? { ...rest, access: { storefront: "PUBLIC_READ" } }
+          : rest,
+    },
   });
   const json = (await response.json()) as {
     data?: {
@@ -390,6 +403,7 @@ export const METAFIELD_DEFINITIONS = [
       "Per-product override for the PDP \"main\" scale: US|EU|UK|CM|JP_MM. Set by the processor from the per-brand rules in app settings; falls back to the block's default_scale when empty.",
     type: "single_line_text_field",
     ownerType: "PRODUCT" as const,
+    storefront: true,
   },
   // Variant-level (one row per scale column)
   {
@@ -398,6 +412,7 @@ export const METAFIELD_DEFINITIONS = [
     key: "us",
     type: "single_line_text_field",
     ownerType: "PRODUCTVARIANT" as const,
+    storefront: true,
   },
   {
     name: "Size Norm — EU",
@@ -405,6 +420,7 @@ export const METAFIELD_DEFINITIONS = [
     key: "eu",
     type: "single_line_text_field",
     ownerType: "PRODUCTVARIANT" as const,
+    storefront: true,
   },
   {
     name: "Size Norm — UK",
@@ -412,6 +428,7 @@ export const METAFIELD_DEFINITIONS = [
     key: "uk",
     type: "single_line_text_field",
     ownerType: "PRODUCTVARIANT" as const,
+    storefront: true,
   },
   {
     name: "Size Norm — CM",
@@ -421,6 +438,7 @@ export const METAFIELD_DEFINITIONS = [
       "Foot length in centimetres (preserves .5 increments and brand ranges).",
     type: "single_line_text_field",
     ownerType: "PRODUCTVARIANT" as const,
+    storefront: true,
   },
   {
     name: "Size Norm — JP mondopoint (mm)",
@@ -428,6 +446,7 @@ export const METAFIELD_DEFINITIONS = [
     key: "jp_mm",
     type: "number_integer",
     ownerType: "PRODUCTVARIANT" as const,
+    storefront: true,
   },
   {
     name: "Size Norm — Matrix (JSON)",
@@ -436,6 +455,7 @@ export const METAFIELD_DEFINITIONS = [
     description: "Full {us, eu, uk, cm, jpMm} object for fast PDP rendering.",
     type: "json",
     ownerType: "PRODUCTVARIANT" as const,
+    storefront: true,
   },
   {
     name: "Size Norm — Source label",
@@ -444,6 +464,7 @@ export const METAFIELD_DEFINITIONS = [
     description: "The original variant option value before normalization.",
     type: "single_line_text_field",
     ownerType: "PRODUCTVARIANT" as const,
+    storefront: true,
   },
   {
     name: "Size Norm — Manual override",
@@ -452,6 +473,7 @@ export const METAFIELD_DEFINITIONS = [
     description: "Set to true when merchant forced the conversion values.",
     type: "boolean",
     ownerType: "PRODUCTVARIANT" as const,
+    storefront: true,
   },
 ];
 
@@ -462,11 +484,97 @@ export const METAFIELD_DEFINITIONS = [
 export async function ensureMetafieldDefinitions(admin: Admin): Promise<{
   total: number;
   created: number;
+  repaired: number;
 }> {
   let created = 0;
   for (const def of METAFIELD_DEFINITIONS) {
     const result = await createMetafieldDefinitionIdempotent(admin, def);
     if (result.created) created++;
   }
-  return { total: METAFIELD_DEFINITIONS.length, created };
+  const repaired = await repairStorefrontAccess(admin);
+  return { total: METAFIELD_DEFINITIONS.length, created, repaired };
+}
+
+/**
+ * Grants Liquid / Storefront read access to the definitions that the PDP
+ * block reads, for installs whose definitions were created before we asked
+ * for it.
+ *
+ * `metafieldDefinitionCreate` is a no-op once a definition exists (it returns
+ * `TAKEN`), so a shop installed earlier keeps `storefront: NONE` forever —
+ * and with NONE the theme's `variant.metafields.size_norm.matrix` reads as
+ * empty, which makes the block render its "no conversion available" state on
+ * the storefront even though the data is there in the admin.
+ *
+ * Reads the current access first so the common case (already correct) costs
+ * two queries and no mutations. Failures are swallowed: a shop that can't be
+ * repaired must still finish loading.
+ */
+export async function repairStorefrontAccess(admin: Admin): Promise<number> {
+  const ownerTypes = ["PRODUCT", "PRODUCTVARIANT"] as const;
+  let repaired = 0;
+
+  for (const ownerType of ownerTypes) {
+    const wanted = new Set(
+      METAFIELD_DEFINITIONS.filter(
+        (d) => d.ownerType === ownerType && d.storefront === true,
+      ).map((d) => d.key),
+    );
+    if (wanted.size === 0) continue;
+
+    try {
+      const response = await admin.graphql(GET_METAFIELD_DEFINITION_ACCESS, {
+        variables: { ownerType, namespace: METAFIELD_NAMESPACE },
+      });
+      const json = (await response.json()) as {
+        data?: {
+          metafieldDefinitions?: {
+            nodes?: { key: string; access?: { storefront?: string } }[];
+          };
+        };
+      };
+      const nodes = json.data?.metafieldDefinitions?.nodes ?? [];
+
+      for (const node of nodes) {
+        if (!wanted.has(node.key)) continue;
+        if (node.access?.storefront === "PUBLIC_READ") continue;
+        const updated = await admin.graphql(UPDATE_METAFIELD_DEFINITION_ACCESS, {
+          variables: {
+            definition: {
+              namespace: METAFIELD_NAMESPACE,
+              key: node.key,
+              ownerType,
+              access: { storefront: "PUBLIC_READ" },
+            },
+          },
+        });
+        const updatedJson = (await updated.json()) as {
+          data?: {
+            metafieldDefinitionUpdate?: {
+              userErrors?: { code: string; message: string }[];
+            };
+          };
+        };
+        const errors =
+          updatedJson.data?.metafieldDefinitionUpdate?.userErrors ?? [];
+        if (errors.length === 0) {
+          repaired++;
+        } else {
+          // eslint-disable-next-line no-undef, no-console
+          console.warn(
+            `[size-norm] could not grant storefront access to ${METAFIELD_NAMESPACE}.${node.key}:`,
+            errors.map((e) => `[${e.code}] ${e.message}`).join("; "),
+          );
+        }
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-undef, no-console
+      console.warn(
+        `[size-norm] storefront-access repair failed for ${ownerType}:`,
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+
+  return repaired;
 }

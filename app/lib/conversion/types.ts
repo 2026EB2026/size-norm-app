@@ -145,7 +145,8 @@ export type ConversionErrorCode =
   | "LABEL_NOT_RECOGNIZED"
   | "TABLE_NOT_FOUND"
   | "MAPPING_NOT_FOUND"
-  | "SCALE_OUT_OF_SCOPE_V1";
+  | "SCALE_OUT_OF_SCOPE_V1"
+  | "SCALE_TAG_UNKNOWN";
 
 export interface ConversionError {
   code: ConversionErrorCode;

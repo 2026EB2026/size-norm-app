@@ -42,18 +42,26 @@ export function parseLabel(
 
   const candidates = enumerateCandidates(trimmed);
 
-  // 1) Aliases — case-insensitive on the alias key.
+  // 1) Direct label match (case-sensitive). This MUST come before aliases.
+  //
+  // The seed enriches each scale's alias map with the values of the other
+  // columns of its conversion table, so a variant labelled in a foreign
+  // system still resolves. On a UK-based scale that means US 4 (= UK 3)
+  // registers the alias "4" → "3" — and a variant genuinely labelled UK "4"
+  // would then resolve one full size down, silently, across the whole
+  // catalogue. A label the scale declares as its own is never a foreign
+  // label: the scale's own vocabulary wins.
+  for (const candidate of candidates) {
+    if (scale.labels.includes(candidate)) {
+      return { raw, canonical: candidate };
+    }
+  }
+
+  // 2) Aliases — case-insensitive on the alias key.
   for (const candidate of candidates) {
     const aliasHit = scale.aliases[candidate.toLowerCase()];
     if (aliasHit !== undefined) {
       return { raw, canonical: aliasHit };
-    }
-  }
-
-  // 2) Direct label match (case-sensitive).
-  for (const candidate of candidates) {
-    if (scale.labels.includes(candidate)) {
-      return { raw, canonical: candidate };
     }
   }
 

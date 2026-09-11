@@ -444,3 +444,68 @@ describe("processProduct — multi-variant happy path on different scale types",
     }
   });
 });
+
+describe("processProduct — ERP SCALATAGLIE_ tag", () => {
+  it("skips a product whose tag names a retired (x-prefixed) scale", () => {
+    const r = processProduct({
+      ...input(),
+      scaleTag: { kind: "out_of_scope", raw: "xAmericane SML" },
+    });
+    expect(r.kind).toBe("skip");
+    if (r.kind === "skip") expect(r.reason).toBe("scale_tag_out_of_scope");
+  });
+
+  it("alerts SCALE_TAG_UNKNOWN when a footwear tag maps to nothing", () => {
+    const r = processProduct({
+      ...input(),
+      scaleTag: { kind: "unknown", raw: "Scarpe Donna XX" },
+    });
+    expect(r.kind).toBe("draft");
+    if (r.kind !== "draft") return;
+    expect(r.productAlert?.errorCode).toBe("SCALE_TAG_UNKNOWN");
+    expect(r.productAlert?.errorMessage).toContain("Scarpe Donna XX");
+    expect(r.productAlert?.payload).toEqual({ tagValue: "Scarpe Donna XX" });
+    expect(r.variantWrites).toHaveLength(0);
+    expect(r.tagsToAdd).toContain(SIZE_NORM_ERROR_TAG);
+  });
+
+  it("alerts SCALE_TAG_UNKNOWN when two tags conflict", () => {
+    const r = processProduct({
+      ...input(),
+      scaleTag: {
+        kind: "ambiguous",
+        raws: ["Scarpe Uomo USA", "Scarpe Uomo IT"],
+      },
+    });
+    expect(r.kind).toBe("draft");
+    if (r.kind !== "draft") return;
+    expect(r.productAlert?.errorCode).toBe("SCALE_TAG_UNKNOWN");
+    expect(r.productAlert?.payload).toEqual({
+      tagValues: ["Scarpe Uomo USA", "Scarpe Uomo IT"],
+    });
+  });
+
+  it("does NOT alert for apparel and bags, which carry scale tags too", () => {
+    // `Unica`, `Abb Uomo IT`, `Americane SML` are real tag values on
+    // handbags and clothing. The footwear gate must win, or every
+    // non-footwear product in the catalogue raises an alert.
+    const r = processProduct({
+      ...input({ productType: "Handbags" }),
+      scaleTag: { kind: "unknown", raw: "Unica" },
+    });
+    expect(r.kind).toBe("skip");
+    if (r.kind === "skip") expect(r.reason).toBe("not_footwear");
+  });
+
+  it("processes normally once the tag resolved", () => {
+    const r = processProduct({
+      ...input(),
+      scaleTag: { kind: "resolved", raw: "Scarpe Uomo IT", sigla: "G" },
+    });
+    expect(r.kind).not.toBe("draft");
+  });
+
+  it("defaults to the pre-tag behaviour when no status is supplied", () => {
+    expect(processProduct(input()).kind).not.toBe("draft");
+  });
+});

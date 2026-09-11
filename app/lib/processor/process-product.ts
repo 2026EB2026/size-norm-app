@@ -24,6 +24,7 @@ import type {
   SizeScale,
 } from "../conversion";
 import { looksLikeFootwear } from "./infer-attributes";
+import { SCALE_TAG_PREFIX, type ScaleTagStatus } from "./scale-tag";
 
 /** Tag added to products that finished processing with an error. */
 export const SIZE_NORM_ERROR_TAG = "size-norm:error";
@@ -78,6 +79,16 @@ export interface ProcessorInput {
    * + brand-specific). Empty array is fine; lookupConversion will return null.
    */
   tables: ConversionTable[];
+  /**
+   * Outcome of matching the product's `SCALATAGLIE_` tag against the shop's
+   * scales, resolved by the caller (it needs DB access). Defaults to
+   * `absent`, which preserves the pre-tag behaviour.
+   *
+   * The processor only acts on it *after* the footwear gate: apparel, bags
+   * and accessories carry scale tags too (`Abb Uomo IT`, `Unica`) and must
+   * not raise alerts for scales we deliberately don't model.
+   */
+  scaleTag?: ScaleTagStatus;
   /**
    * Override the footwear product-type list. Defaults to
    * {@link DEFAULT_FOOTWEAR_PRODUCT_TYPES}.
@@ -195,6 +206,7 @@ export function processProduct(input: ProcessorInput): ProcessingResult {
     product,
     scale,
     tables,
+    scaleTag = { kind: "absent" },
     footwearProductTypes = DEFAULT_FOOTWEAR_PRODUCT_TYPES,
     sizeOptionNames = DEFAULT_SIZE_OPTION_NAMES,
   } = input;
@@ -205,6 +217,37 @@ export function processProduct(input: ProcessorInput): ProcessingResult {
   // title/tags/product_type. Non-footwear products are silently skipped.
   if (!isFootwear(product, footwearProductTypes) && !looksLikeFootwear(product)) {
     return { kind: "skip", reason: "not_footwear" };
+  }
+
+  // 1b. ERP scale tag. Past the footwear gate, a `SCALATAGLIE_` tag we can't
+  // resolve is a hard stop rather than something to guess around: falling
+  // through to the vendor+gender auto-derive is exactly how a US-labelled
+  // product ends up converted with an EU-based scale, silently.
+  if (scaleTag.kind === "out_of_scope") {
+    return { kind: "skip", reason: "scale_tag_out_of_scope" };
+  }
+  if (scaleTag.kind === "unknown" || scaleTag.kind === "ambiguous") {
+    const tags = tagsAfter(product.tags, true);
+    const alert: AlertEmission =
+      scaleTag.kind === "unknown"
+        ? {
+            errorCode: "SCALE_TAG_UNKNOWN",
+            errorMessage: `Il tag ${SCALE_TAG_PREFIX}${scaleTag.raw} non corrisponde a nessuna scala configurata. Crea la scala oppure collegala a questo valore dalla pagina Scale Taglie.`,
+            payload: { tagValue: scaleTag.raw },
+          }
+        : {
+            errorCode: "SCALE_TAG_UNKNOWN",
+            errorMessage: `Il prodotto ha più tag ${SCALE_TAG_PREFIX} in conflitto (${scaleTag.raws.join(", ")}). Lasciane uno solo.`,
+            payload: { tagValues: scaleTag.raws },
+          };
+    return {
+      kind: "draft",
+      productAlert: alert,
+      variantAlerts: [],
+      tagsToAdd: tags.add,
+      tagsToRemove: tags.remove,
+      variantWrites: [],
+    };
   }
 
   // 2. Required product metafields. `gender` is always required at this
