@@ -6,6 +6,11 @@ jobs:
   CI:
     name: Node ${{ matrix.node }}
     runs-on: ubuntu-latest
+    # `prisma validate` resolves env("DATABASE_URL") while parsing the schema
+    # and fails with P1012 when it is unset. Nothing here connects to a
+    # database — the value only has to exist and be a well-formed URL.
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
     strategy:
       fail-fast: false
       matrix:
