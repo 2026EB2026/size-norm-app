@@ -9,6 +9,7 @@ import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
 
 import {
   CREATE_METAFIELD_DEFINITION,
+  DELETE_METAFIELDS,
   GET_METAFIELD_DEFINITION_ACCESS,
   GET_PRODUCT_DIAGNOSTICS,
   GET_PRODUCT_FOR_PROCESSING,
@@ -211,10 +212,26 @@ export async function setMetafields(
   admin: Admin,
   writes: MetafieldWrite[],
 ): Promise<void> {
-  if (writes.length === 0) return;
+  // Shopify rejects a blank value on a typed metafield with
+  // `[INVALID_VALUE] Value can't be blank`, and because the rejection is
+  // per-mutation it takes the whole batch of 25 down with it — one empty
+  // string silently costs up to 24 good writes. Clearing a metafield is
+  // `deleteMetafields`, not an empty write, so anything blank that reaches
+  // here is a caller bug: drop it loudly rather than lose the batch.
+  const safe = writes.filter((w) => w.value.trim().length > 0);
+  if (safe.length !== writes.length) {
+    const dropped = writes
+      .filter((w) => w.value.trim().length === 0)
+      .map((w) => `${w.namespace}.${w.key}`);
+    // eslint-disable-next-line no-undef, no-console
+    console.warn(
+      `[size-norm] dropped ${dropped.length} blank metafield write(s): ${dropped.join(", ")}`,
+    );
+  }
+  if (safe.length === 0) return;
 
-  for (let i = 0; i < writes.length; i += METAFIELDS_SET_BATCH_LIMIT) {
-    const batch = writes.slice(i, i + METAFIELDS_SET_BATCH_LIMIT);
+  for (let i = 0; i < safe.length; i += METAFIELDS_SET_BATCH_LIMIT) {
+    const batch = safe.slice(i, i + METAFIELDS_SET_BATCH_LIMIT);
     const response = await admin.graphql(SET_METAFIELDS, {
       variables: { metafields: batch },
     });
@@ -239,6 +256,58 @@ export async function setMetafields(
         `metafieldsSet userErrors (batch ${i}-${i + batch.length}): ${userErrors
           .map((e) => `[${e.code}] ${e.field?.join(".") ?? ""}: ${e.message}`)
           .join("; ")}`,
+      );
+    }
+  }
+}
+
+/** Identifies one metafield to remove. */
+export interface MetafieldTarget {
+  ownerId: string;
+  namespace: string;
+  key: string;
+}
+
+/**
+ * Removes metafields. Used to clear a value, which cannot be done by writing
+ * an empty string.
+ *
+ * Deleting a metafield that does not exist is not an error worth failing a
+ * whole product over, so user errors are logged and swallowed — unlike
+ * {@link setMetafields}, nothing downstream depends on the removal having
+ * happened.
+ */
+export async function deleteMetafields(
+  admin: Admin,
+  targets: MetafieldTarget[],
+): Promise<void> {
+  if (targets.length === 0) return;
+
+  for (let i = 0; i < targets.length; i += METAFIELDS_SET_BATCH_LIMIT) {
+    const batch = targets.slice(i, i + METAFIELDS_SET_BATCH_LIMIT);
+    try {
+      const response = await admin.graphql(DELETE_METAFIELDS, {
+        variables: { metafields: batch },
+      });
+      const json = (await response.json()) as {
+        data?: {
+          metafieldsDelete?: { userErrors?: { message: string }[] };
+        };
+      };
+      const userErrors = json.data?.metafieldsDelete?.userErrors ?? [];
+      if (userErrors.length > 0) {
+        // eslint-disable-next-line no-undef, no-console
+        console.warn(
+          `[size-norm] metafieldsDelete userErrors: ${userErrors
+            .map((e) => e.message)
+            .join("; ")}`,
+        );
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-undef, no-console
+      console.warn(
+        "[size-norm] metafieldsDelete failed:",
+        e instanceof Error ? e.message : e,
       );
     }
   }

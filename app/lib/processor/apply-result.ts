@@ -8,6 +8,7 @@
 import { createHash } from "node:crypto";
 
 import {
+  deleteMetafields,
   setMetafields,
   updateProductStatusAndTags,
   type Admin,
@@ -281,26 +282,37 @@ export async function applyProcessingResult(
   // 2b. Per-brand display-scale override. If the merchant has configured a
   //     display scale for this product's vendor in Shop.brandDisplayScales,
   //     write it to the product metafield `size_norm.display_scale` so the
-  //     theme extension can pick it up at render time. We deliberately
-  //     write the metafield even if the brand isn't in the map — using the
-  //     empty string in that case — so previously-set values get cleared
-  //     when the merchant removes a brand rule.
+  //     theme extension can pick it up at render time. When no rule applies
+  //     the metafield is REMOVED rather than written empty: Shopify rejects
+  //     a blank value with `[INVALID_VALUE] Value can't be blank`, and the
+  //     rejection kills the entire batch of 25 it travels in — which is how
+  //     this one write used to discard a product's whole conversion.
   const settings = await readShopProcessingSettings(prisma, shopDomain);
   const displayScaleValue = resolveBrandDisplayScale(
     settings.brandDisplayScales,
     product.vendor,
   );
-  metafieldWrites.push({
-    ownerId: product.id,
-    namespace: "size_norm",
-    key: "display_scale",
-    type: "single_line_text_field",
-    value: displayScaleValue,
-  });
+  if (displayScaleValue.length > 0) {
+    metafieldWrites.push({
+      ownerId: product.id,
+      namespace: "size_norm",
+      key: "display_scale",
+      type: "single_line_text_field",
+      value: displayScaleValue,
+    });
+  }
 
   // 3. Write metafields in one batch.
   if (metafieldWrites.length > 0) {
     await setMetafields(admin, metafieldWrites);
+  }
+
+  // 3b. Clear a stale display-scale left over from a brand rule the
+  //     merchant has since removed.
+  if (displayScaleValue.length === 0) {
+    await deleteMetafields(admin, [
+      { ownerId: product.id, namespace: "size_norm", key: "display_scale" },
+    ]);
   }
 
   // 4. Tags always; status only when the merchant opted in (see
