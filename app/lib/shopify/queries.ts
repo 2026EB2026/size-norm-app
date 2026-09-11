@@ -176,3 +176,22 @@ export const UPDATE_METAFIELD_DEFINITION_ACCESS = `#graphql
     }
   }
 ` as const;
+
+/**
+ * Deletes metafields by owner + namespace + key. Shopify rejects a blank
+ * value on a typed metafield (`[INVALID_VALUE] Value can't be blank`), so
+ * clearing one requires this mutation rather than writing "".
+ */
+export const DELETE_METAFIELDS = `#graphql
+  mutation DeleteMetafields($metafields: [MetafieldIdentifierInput!]!) {
+    metafieldsDelete(metafields: $metafields) {
+      deletedMetafields {
+        key
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+` as const;
