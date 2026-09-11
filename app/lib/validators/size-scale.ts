@@ -32,6 +32,10 @@ export const sizeScaleFormSchema = z.object({
     .trim()
     .min(1, "Nome obbligatorio")
     .max(120, "Nome troppo lungo"),
+  // Value of the ERP's `SCALATAGLIE_<value>` product tag that selects this
+  // scale. Empty means "no tag points here" and is stored as null — several
+  // scales may legitimately have none, but two cannot share one.
+  tagValue: z.string().trim().max(120, "Valore troppo lungo").default(""),
   gender: genderEnum,
   sourceScale: sourceScaleEnum,
   // Newline-separated string, parsed into string[] by the action.

@@ -9,6 +9,7 @@ import {
   parseLabels,
   sizeScaleFormSchema,
 } from "../lib/validators/size-scale";
+import { normalizeScaleTagValue } from "../lib/processor/scale-tag";
 import { useSubmitting } from "../lib/ui/feedback";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -18,6 +19,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const parsed = sizeScaleFormSchema.safeParse({
     sigla: formData.get("sigla"),
     name: formData.get("name"),
+    tagValue: formData.get("tagValue") ?? "",
     gender: formData.get("gender"),
     sourceScale: formData.get("sourceScale"),
     labelsRaw: formData.get("labelsRaw"),
@@ -52,11 +54,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     };
   }
 
+  // One `SCALATAGLIE_` value can only point at one scale, or the lookup
+  // that reads it would be non-deterministic.
+  const tagValue =
+    parsed.data.tagValue.length > 0
+      ? normalizeScaleTagValue(parsed.data.tagValue)
+      : null;
+  if (tagValue !== null) {
+    const tagTaken = await prisma.sizeScale.findUnique({
+      where: { shopDomain_tagValue: { shopDomain: session.shop, tagValue } },
+    });
+    if (tagTaken !== null) {
+      return {
+        errors: {
+          tagValue: [`Valore già collegato alla scala "${tagTaken.sigla}"`],
+        },
+        values: Object.fromEntries(formData),
+      };
+    }
+  }
+
   await prisma.sizeScale.create({
     data: {
       shopDomain: session.shop,
       sigla: parsed.data.sigla,
       name: parsed.data.name,
+      tagValue,
       gender: parsed.data.gender,
       sourceScale: parsed.data.sourceScale,
       labels,
@@ -105,6 +128,14 @@ export default function ScaleNew() {
                 error={errors?.name?.[0]}
               />
             </s-grid>
+
+            <s-text-field
+              name="tagValue"
+              label="Tag SCALATAGLIE_ (valore dall'ERP)"
+              details="Il valore che segue SCALATAGLIE_ nei tag prodotto, es. Scarpe Donna USA. Lascia vuoto se nessun tag punta a questa scala."
+              defaultValue={values.tagValue ?? ""}
+              error={errors?.tagValue?.[0]}
+            />
             <s-grid gridTemplateColumns="1fr 1fr" gap="base">
               <s-select
                 name="gender"

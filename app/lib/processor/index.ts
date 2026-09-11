@@ -27,6 +27,7 @@ import {
   inferGenderFromText,
 } from "./infer-attributes";
 import { processProduct, type ProcessingResult } from "./process-product";
+import { parseScaleTag, type ScaleTagStatus } from "./scale-tag";
 
 type PrismaSizeScaleRow = {
   sigla: string;
@@ -139,6 +140,11 @@ export function atelierFallbackByGender(
  * specific first. The processor uses the first sigla that resolves to a
  * SizeScale row in DB.
  *
+ * Note this covers the *auto-derive* candidates only. Two signals are
+ * resolved by {@link runProcessor} before this list is consulted: the
+ * explicit `size_norm.scale_sigla` metafield, and the ERP's
+ * `SCALATAGLIE_<name>` tag (see `scale-tag.ts`).
+ *
  * `gender` and `age` must already be the resolved/inferred canonical
  * values (the orchestrator combines metafield + text inference before
  * calling this).
@@ -186,7 +192,8 @@ export function resolveCandidateSigle(product: {
  * Runs the full processing pipeline for one product:
  *   1. Fetch product+variants+metafields from Shopify
  *   2. Optionally short-circuit if nothing relevant changed (snapshot hash)
- *   3. Load scale + conversion tables from DB
+ *   3. Load scale + conversion tables from DB (ERP `SCALATAGLIE_` tag first,
+ *      then the vendor+gender auto-derive)
  *   4. Run the pure processor
  *   5. Apply mutations (metafields, status, tags) and persist alerts/snapshot
  *
@@ -234,27 +241,69 @@ export async function runProcessor(
 
   // ── Scale resolution, in priority order ─────────────────────────────
   //   1. `product.scaleSigla` (manual override metafield)
-  //   2. `{slug(vendor)}-{gender}-{age}` (auto-derived)
-  //   3. `{slug(vendor)}-unisex-{age}` (brand unisex accepts any gender)
-  //   4. Atelier fallback by gender (G/I/AM)
-  //   5. Unique-brand fallback: when the brand has exactly ONE scale for
+  //   2. `SCALATAGLIE_<name>` tag from the ERP export
+  //   3. `{slug(vendor)}-{gender}-{age}` (auto-derived)
+  //   4. `{slug(vendor)}-unisex-{age}` (brand unisex accepts any gender)
+  //   5. Atelier fallback by gender (G/I/AM)
+  //   6. Unique-brand fallback: when the brand has exactly ONE scale for
   //      the age bucket, use it even without a gender signal.
   // Null when nothing matched; the pure processor then emits TABLE_NOT_FOUND.
   let scale: SizeScale | null = null;
   let tables: ConversionTable[] = [];
-  const candidateSigle = resolveCandidateSigle({
-    vendor: product.vendor,
-    scaleSigla: product.scaleSigla,
-    gender: effectiveGender,
-    age: effectiveAge,
-  });
-  for (const sigla of candidateSigle) {
-    const scaleRow = await prisma.sizeScale.findUnique({
-      where: { shopDomain_sigla: { shopDomain, sigla } },
+
+  // The tag is the merchant's declared truth and carries the scale's base
+  // (US/EU/UK/JP-mm). Resolving it here also produces the status the pure
+  // processor needs to alert on an unmapped tag — but only for footwear,
+  // which is why the decision is deferred to it rather than taken now.
+  const parsedTag = parseScaleTag(product.tags);
+  let scaleTag: ScaleTagStatus = { kind: "absent" };
+  if (parsedTag.kind === "out_of_scope") {
+    scaleTag = { kind: "out_of_scope", raw: parsedTag.raw };
+  } else if (parsedTag.kind === "ambiguous") {
+    scaleTag = { kind: "ambiguous", raws: parsedTag.raws };
+  } else if (parsedTag.kind === "value") {
+    const tagRow = await prisma.sizeScale.findUnique({
+      where: {
+        shopDomain_tagValue: { shopDomain, tagValue: parsedTag.normalized },
+      },
     });
-    if (scaleRow === null) continue;
-    scale = prismaScaleToEngine(scaleRow);
-    break;
+    scaleTag =
+      tagRow === null
+        ? { kind: "unknown", raw: parsedTag.raw }
+        : { kind: "resolved", raw: parsedTag.raw, sigla: tagRow.sigla };
+    if (tagRow !== null) scale = prismaScaleToEngine(tagRow);
+  }
+
+  // The explicit metafield still outranks the tag: it exists precisely so a
+  // human can correct a wrong ERP value.
+  if (product.scaleSigla !== null && product.scaleSigla.trim().length > 0) {
+    const overrideRow = await prisma.sizeScale.findUnique({
+      where: {
+        shopDomain_sigla: { shopDomain, sigla: product.scaleSigla.trim() },
+      },
+    });
+    if (overrideRow !== null) scale = prismaScaleToEngine(overrideRow);
+  }
+
+  // True when the scale was chosen by an explicit signal (tag or metafield
+  // override) rather than derived from vendor+gender.
+  const scaleFromExplicitSignal = scale !== null;
+
+  if (scale === null) {
+    const candidateSigle = resolveCandidateSigle({
+      vendor: product.vendor,
+      scaleSigla: product.scaleSigla,
+      gender: effectiveGender,
+      age: effectiveAge,
+    });
+    for (const sigla of candidateSigle) {
+      const scaleRow = await prisma.sizeScale.findUnique({
+        where: { shopDomain_sigla: { shopDomain, sigla } },
+      });
+      if (scaleRow === null) continue;
+      scale = prismaScaleToEngine(scaleRow);
+      break;
+    }
   }
 
   if (
@@ -282,10 +331,17 @@ export async function runProcessor(
       where: { shopDomain, scaleSigla: scale.sigla },
     });
     tables = tableRows.map(prismaTableToEngine);
-    // If we still have no gender signal but a scale resolved (unisex
-    // candidate or unique-brand fallback), adopt the scale's gender so
+    // When the scale was named explicitly — by the ERP tag or by the
+    // override metafield — its gender IS the product's gender: `Scarpe
+    // Donna USA` is a women's scale whatever the title says. Adopting it
+    // also keeps the metafield write-back below consistent with the tag,
+    // instead of ping-ponging with a stale inferred value and tripping the
+    // GENDER_MISMATCH check on the next webhook.
+    //
+    // Otherwise, adopt only to fill a gap: no gender signal at all but a
+    // scale resolved (unisex candidate or unique-brand fallback), so
     // processProduct's required-gender and consistency checks pass.
-    if (effectiveGender === null) {
+    if (scaleFromExplicitSignal || effectiveGender === null) {
       effectiveGender = scale.gender;
     }
   }
@@ -297,7 +353,12 @@ export async function runProcessor(
     gender: effectiveGender,
     ageCategory: effectiveAge,
   };
-  const result = processProduct({ product: normalizedProduct, scale, tables });
+  const result = processProduct({
+    product: normalizedProduct,
+    scale,
+    tables,
+    scaleTag,
+  });
   await applyProcessingResult(admin, prisma, shopDomain, product, result);
 
   // ── Persist inferred attributes ─────────────────────────────────────
@@ -334,6 +395,12 @@ export async function runProcessor(
   return result;
 }
 
+export {
+  normalizeScaleTagValue,
+  parseScaleTag,
+  SCALE_TAG_PREFIX,
+} from "./scale-tag";
+export type { ScaleTagParse, ScaleTagStatus } from "./scale-tag";
 export { processProduct } from "./process-product";
 export type { ProcessingResult } from "./process-product";
 export {

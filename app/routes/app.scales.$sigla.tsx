@@ -14,6 +14,7 @@ import {
   parseLabels,
   sizeScaleFormSchema,
 } from "../lib/validators/size-scale";
+import { normalizeScaleTagValue } from "../lib/processor/scale-tag";
 import { useSaveToast, useSubmitting } from "../lib/ui/feedback";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -40,6 +41,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     scale: {
       sigla: scale.sigla,
       name: scale.name,
+      tagValue: scale.tagValue,
       gender: scale.gender,
       sourceScale: scale.sourceScale,
       labelsRaw: labels.join("\n"),
@@ -66,6 +68,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   const parsed = sizeScaleFormSchema.safeParse({
     sigla: formData.get("sigla"),
     name: formData.get("name"),
+    tagValue: formData.get("tagValue") ?? "",
     gender: formData.get("gender"),
     sourceScale: formData.get("sourceScale"),
     labelsRaw: formData.get("labelsRaw"),
@@ -118,11 +121,32 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
   }
 
+  // The tag link must stay unique per shop, or two scales would answer the
+  // same `SCALATAGLIE_` value and the lookup would be non-deterministic.
+  const tagValue =
+    parsed.data.tagValue.length > 0
+      ? normalizeScaleTagValue(parsed.data.tagValue)
+      : null;
+  if (tagValue !== null) {
+    const tagTaken = await prisma.sizeScale.findUnique({
+      where: { shopDomain_tagValue: { shopDomain: session.shop, tagValue } },
+    });
+    if (tagTaken !== null && tagTaken.sigla !== sigla) {
+      return {
+        errors: {
+          tagValue: [`Valore già collegato alla scala "${tagTaken.sigla}"`],
+        },
+        values: Object.fromEntries(formData),
+      };
+    }
+  }
+
   await prisma.sizeScale.update({
     where: { shopDomain_sigla: { shopDomain: session.shop, sigla } },
     data: {
       sigla: parsed.data.sigla,
       name: parsed.data.name,
+      tagValue,
       gender: parsed.data.gender,
       sourceScale: parsed.data.sourceScale,
       labels,
@@ -187,6 +211,14 @@ export default function ScaleEdit() {
                 error={errors?.name?.[0]}
               />
             </s-grid>
+
+            <s-text-field
+              name="tagValue"
+              label="Tag SCALATAGLIE_ (valore dall'ERP)"
+              details="Il valore che segue SCALATAGLIE_ nei tag prodotto, es. Scarpe Donna USA. Vuoto = nessun tag punta a questa scala."
+              defaultValue={scale.tagValue ?? ""}
+              error={errors?.tagValue?.[0]}
+            />
 
             <s-grid gridTemplateColumns="1fr 1fr" gap="base">
               <s-select

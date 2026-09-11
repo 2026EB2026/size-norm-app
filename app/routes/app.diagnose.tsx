@@ -68,6 +68,23 @@ function Value(props: { value: string | null; empty?: string }) {
   return <s-text>{props.value}</s-text>;
 }
 
+/** How each `SCALATAGLIE_` outcome reads in the trace. */
+const SCALE_TAG_LABEL: Record<string, string> = {
+  absent: "nessun tag",
+  resolved: "scala risolta",
+  out_of_scope: "scala ritirata (prefisso x)",
+  unknown: "valore non mappato",
+  ambiguous: "tag in conflitto",
+};
+
+const SCALE_TAG_TONE: Record<string, "success" | "critical" | "neutral" | "warning"> = {
+  absent: "neutral",
+  resolved: "success",
+  out_of_scope: "warning",
+  unknown: "critical",
+  ambiguous: "critical",
+};
+
 export default function Diagnose() {
   const { raw, inputError, result } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
@@ -225,11 +242,33 @@ export default function Diagnose() {
 
           <s-section heading="4 · Scala taglie">
             <s-stack direction="block" gap="base">
-              {result.candidates.length === 0 ? (
+              <s-grid gridTemplateColumns="max-content 1fr" gap="small">
+                <Row label="Tag SCALATAGLIE_">
+                  <Value value={result.scaleTag.raw} empty="— assente" />
+                </Row>
+                <Row label="Esito del tag">
+                  <s-badge tone={SCALE_TAG_TONE[result.scaleTag.status]}>
+                    {SCALE_TAG_LABEL[result.scaleTag.status]}
+                    {result.scaleTag.sigla !== null
+                      ? ` → ${result.scaleTag.sigla}`
+                      : ""}
+                  </s-badge>
+                </Row>
+              </s-grid>
+
+              {result.scaleTag.status === "resolved" && (
+                <s-paragraph color="subdued">
+                  Il tag dell&apos;ERP ha scelto la scala: le sigle derivate da
+                  brand e gender non vengono provate.
+                </s-paragraph>
+              )}
+
+              {result.candidates.length === 0 &&
+              result.scaleTag.status !== "resolved" ? (
                 <s-paragraph color="subdued">
                   Nessuna sigla candidata: mancano brand e gender.
                 </s-paragraph>
-              ) : (
+              ) : result.candidates.length === 0 ? null : (
                 <s-table>
                   <s-table-header-row>
                     <s-table-header listSlot="primary">

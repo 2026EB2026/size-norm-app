@@ -93,6 +93,11 @@ model SizeScale {
   shopDomain  String
   sigla       String
   name        String
+  // Normalized value of the ERP's `SCALATAGLIE_<name>` product tag that
+  // selects this scale (trimmed, whitespace-collapsed, lowercased — see
+  // normalizeScaleTagValue). Seeded from `name` for the Atelier scales;
+  // null for brand scales, which the ERP never references by tag.
+  tagValue    String?
   category    Category    @default(FOOTWEAR)
   gender      Gender
   sourceScale SourceScale
@@ -107,6 +112,7 @@ model SizeScale {
   shop Shop @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
 
   @@unique([shopDomain, sigla])
+  @@unique([shopDomain, tagValue])
   @@index([shopDomain])
 }
 

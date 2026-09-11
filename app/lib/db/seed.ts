@@ -16,6 +16,7 @@ import {
   ensureMetafieldDefinitions,
   type Admin,
 } from "../shopify/client";
+import { normalizeScaleTagValue } from "../processor/scale-tag";
 import prisma from "../../db.server";
 
 /** Maps engine Gender → Prisma enum form. */
@@ -50,7 +51,7 @@ const metafieldDefsEnsuredInProcess = new Set<string>();
  * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
  * scales seed or its CM-overrides companion file.
  */
-const BRAND_SEED_REVISION = "v3-cross-scale-aliases";
+const BRAND_SEED_REVISION = "v4-native-labels-win";
 const brandScalesSeededInProcess = new Set<string>();
 
 /**
@@ -89,11 +90,19 @@ function applyCmOverrides(
 function enrichAliasesFromTable(
   baseAliases: Record<string, string>,
   mappings: ConversionMapping[],
+  /**
+   * The scale's own canonical labels. A foreign-column value that collides
+   * with one of them must NOT become an alias: on a UK-based scale, US 4 is
+   * UK 3, so aliasing "4" → "3" would hijack every variant genuinely
+   * labelled UK 4 and shift it a full size down.
+   */
+  labels: string[],
 ): Record<string, string> {
   const aliases: Record<string, string> = { ...baseAliases };
   // Pre-build a Set of existing alias keys (lowercased) so we don't
   // double-add and don't overwrite manually-curated entries.
   const existing = new Set(Object.keys(aliases).map((k) => k.toLowerCase()));
+  const native = new Set(labels.map((l) => l.toLowerCase()));
 
   const addAlias = (
     key: string | number | null | undefined,
@@ -104,6 +113,7 @@ function enrichAliasesFromTable(
     if (k.length === 0 || k === canonical) return;
     const kLower = k.toLowerCase();
     if (existing.has(kLower)) return;
+    if (native.has(kLower)) return;
     aliases[k] = canonical;
     existing.add(kLower);
   };
@@ -143,6 +153,13 @@ async function upsertScale(
   shopDomain: string,
   scale: SizeScale,
   table: ConversionTable | null,
+  /**
+   * Normalized `SCALATAGLIE_` tag value that selects this scale, or null for
+   * brand scales (the ERP never references those by tag). Set on create
+   * only: a merchant who renames a scale in the admin must not have the
+   * ERP link silently rewritten under them.
+   */
+  tagValue: string | null,
 ): Promise<void> {
   // Auto-derive cross-scale aliases from the conversion table so that
   // variants labelled in US/EU/UK/CM (any column) resolve to the scale's
@@ -151,7 +168,7 @@ async function upsertScale(
   const enrichedAliases =
     table === null
       ? scale.aliases
-      : enrichAliasesFromTable(scale.aliases, table.mappings);
+      : enrichAliasesFromTable(scale.aliases, table.mappings, scale.labels);
 
   await tx.sizeScale.upsert({
     where: { shopDomain_sigla: { shopDomain, sigla: scale.sigla } },
@@ -159,6 +176,7 @@ async function upsertScale(
       shopDomain,
       sigla: scale.sigla,
       name: scale.name,
+      tagValue,
       gender: toPrismaGender(scale.gender),
       sourceScale: toPrismaSourceScale(scale.sourceScale),
       labels: scale.labels,
@@ -246,7 +264,15 @@ export async function ensureSeed(
         const table = GENERIC_CONVERSION_TABLES_V1.find(
           (t) => t.scaleSigla === scale.sigla,
         );
-        await upsertScale(tx as typeof prisma, shopDomain, scale, table ?? null);
+        // Atelier scales are the ones the ERP names in its
+        // `SCALATAGLIE_<name>` product tag, so they carry the tag link.
+        await upsertScale(
+          tx as typeof prisma,
+          shopDomain,
+          scale,
+          table ?? null,
+          normalizeScaleTagValue(scale.name),
+        );
       }
       await tx.shop.update({
         where: { shopDomain },
@@ -264,6 +290,22 @@ export async function ensureSeed(
   if (!brandScalesSeededInProcess.has(cacheKey)) {
     try {
       await prisma.$transaction(async (tx) => {
+        // Atelier scales are seeded once (step 3), but their alias maps must
+        // still be refreshed when the derivation rules change — the
+        // foreign-column enrichment used to shadow a scale's own labels, so
+        // shops seeded before the fix carry aliases like UK "4" → "3".
+        for (const scale of ATELIER_SCALES_V1) {
+          const table = GENERIC_CONVERSION_TABLES_V1.find(
+            (t) => t.scaleSigla === scale.sigla,
+          );
+          await upsertScale(
+            tx as typeof prisma,
+            shopDomain,
+            scale,
+            table ?? null,
+            normalizeScaleTagValue(scale.name),
+          );
+        }
         for (const scale of BRAND_SCALES_V1) {
           const baseTable = BRAND_CONVERSION_TABLES_V1.find(
             (t) => t.scaleSigla === scale.sigla,
@@ -281,7 +323,7 @@ export async function ensureSeed(
                     baseTable.mappings,
                   ),
                 };
-          await upsertScale(tx as typeof prisma, shopDomain, scale, table);
+          await upsertScale(tx as typeof prisma, shopDomain, scale, table, null);
         }
       });
       brandScalesSeededInProcess.add(cacheKey);

@@ -36,6 +36,7 @@ import {
   DEFAULT_FOOTWEAR_PRODUCT_TYPES,
   DEFAULT_SIZE_OPTION_NAMES,
 } from "./process-product";
+import { parseScaleTag, SCALE_TAG_PREFIX } from "./scale-tag";
 import {
   atelierFallbackByGender,
   normalizeGender,
@@ -93,7 +94,16 @@ export interface ProductDiagnosis {
     effective: string;
   };
   brandSlug: string | null;
-  /** Each sigla tried, in order, and whether a scale row exists for it. */
+  /** Outcome of the ERP's `SCALATAGLIE_<name>` tag, which outranks the
+   * vendor+gender auto-derive. */
+  scaleTag: {
+    raw: string | null;
+    normalized: string | null;
+    status: "absent" | "resolved" | "out_of_scope" | "unknown" | "ambiguous";
+    sigla: string | null;
+  };
+  /** Each sigla tried, in order, and whether a scale row exists for it.
+   * Empty when the tag or the override metafield already resolved. */
   candidates: { sigla: string; found: boolean }[];
   uniqueBrandFallback: {
     attempted: boolean;
@@ -232,24 +242,78 @@ export async function diagnoseProduct(
     );
   }
 
-  // ── Scale candidates ───────────────────────────────────────────────
-  const candidateSigle = resolveCandidateSigle({
-    vendor: product.vendor,
-    scaleSigla: product.scaleSigla,
-    gender: effectiveGender,
-    age: effectiveAge,
-  });
-
-  const candidates: { sigla: string; found: boolean }[] = [];
+  // ── ERP scale tag (mirrors runProcessor) ───────────────────────────
+  const parsedTag = parseScaleTag(product.tags);
+  const scaleTag: ProductDiagnosis["scaleTag"] = {
+    raw: null,
+    normalized: null,
+    status: "absent",
+    sigla: null,
+  };
   let scale: SizeScale | null = null;
-  for (const sigla of candidateSigle) {
-    const row = await prisma.sizeScale.findUnique({
-      where: { shopDomain_sigla: { shopDomain, sigla } },
+
+  if (parsedTag.kind === "out_of_scope") {
+    scaleTag.raw = parsedTag.raw;
+    scaleTag.status = "out_of_scope";
+    blockers.push(
+      `Il tag ${SCALE_TAG_PREFIX}${parsedTag.raw} indica una scala ritirata (prefisso "x"): il prodotto viene ignorato senza generare alert.`,
+    );
+  } else if (parsedTag.kind === "ambiguous") {
+    scaleTag.raw = parsedTag.raws.join(", ");
+    scaleTag.status = "ambiguous";
+    blockers.push(
+      `Il prodotto ha più tag ${SCALE_TAG_PREFIX} in conflitto (${parsedTag.raws.join(", ")}). Lasciane uno solo.`,
+    );
+  } else if (parsedTag.kind === "value") {
+    scaleTag.raw = parsedTag.raw;
+    scaleTag.normalized = parsedTag.normalized;
+    const tagRow = await prisma.sizeScale.findUnique({
+      where: {
+        shopDomain_tagValue: { shopDomain, tagValue: parsedTag.normalized },
+      },
     });
-    const found = row !== null;
-    candidates.push({ sigla, found });
-    if (found && scale === null) {
-      scale = toEngineScale(row as PrismaScaleRow);
+    if (tagRow === null) {
+      scaleTag.status = "unknown";
+      blockers.push(
+        `Il tag ${SCALE_TAG_PREFIX}${parsedTag.raw} non corrisponde a nessuna scala configurata. Crea la scala oppure collegala a questo valore dalla pagina Scale Taglie.`,
+      );
+    } else {
+      scaleTag.status = "resolved";
+      scaleTag.sigla = tagRow.sigla;
+      scale = toEngineScale(tagRow as PrismaScaleRow);
+    }
+  }
+
+  // ── Explicit override metafield (outranks the tag) ─────────────────
+  if (product.scaleSigla !== null && product.scaleSigla.trim().length > 0) {
+    const overrideRow = await prisma.sizeScale.findUnique({
+      where: {
+        shopDomain_sigla: { shopDomain, sigla: product.scaleSigla.trim() },
+      },
+    });
+    if (overrideRow !== null) scale = toEngineScale(overrideRow as PrismaScaleRow);
+  }
+
+  const scaleFromExplicitSignal = scale !== null;
+
+  // ── Scale candidates ───────────────────────────────────────────────
+  const candidates: { sigla: string; found: boolean }[] = [];
+  if (scale === null) {
+    const candidateSigle = resolveCandidateSigle({
+      vendor: product.vendor,
+      scaleSigla: product.scaleSigla,
+      gender: effectiveGender,
+      age: effectiveAge,
+    });
+    for (const sigla of candidateSigle) {
+      const row = await prisma.sizeScale.findUnique({
+        where: { shopDomain_sigla: { shopDomain, sigla } },
+      });
+      const found = row !== null;
+      candidates.push({ sigla, found });
+      if (found && scale === null) {
+        scale = toEngineScale(row as PrismaScaleRow);
+      }
     }
   }
 
@@ -283,7 +347,8 @@ export async function diagnoseProduct(
     }
   }
 
-  const adoptedFromScale = effectiveGender === null && scale !== null;
+  const adoptedFromScale =
+    scale !== null && (scaleFromExplicitSignal || effectiveGender === null);
   if (adoptedFromScale && scale !== null) {
     effectiveGender = scale.gender;
   }
@@ -487,6 +552,7 @@ export async function diagnoseProduct(
     },
     brandSlug,
     candidates,
+    scaleTag,
     uniqueBrandFallback,
     resolvedScale:
       scale === null

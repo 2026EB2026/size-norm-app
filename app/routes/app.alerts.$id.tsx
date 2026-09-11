@@ -250,6 +250,7 @@ const ERROR_CODE_LABEL: Record<string, string> = {
   TABLE_NOT_FOUND: "Tabella/scala non trovata",
   MAPPING_NOT_FOUND: "Mapping mancante",
   SCALE_OUT_OF_SCOPE_V1: "Scala fuori scope V1",
+  SCALE_TAG_UNKNOWN: "Tag scala non mappato",
 };
 
 export default function AlertDetail() {

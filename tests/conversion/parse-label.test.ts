@@ -235,3 +235,56 @@ describe("parseLabel — pathological inputs", () => {
     expect(parseLabel("99½", G)).toBeNull();
   });
 });
+
+describe("parseLabel — a scale's own labels outrank its aliases", () => {
+  // Regression: the seed enriches each scale's alias map with the other
+  // columns of its conversion table. On SUA (Adidas unisex, UK-based) the
+  // row canonical "3" carries us "4", which registers the alias "4" → "3".
+  // With aliases checked first, an Adidas Samba variant genuinely labelled
+  // UK 4 resolved to canonical 3 — a full size down, on every UK product in
+  // the catalogue, with no error raised.
+  const ukScale: SizeScale = {
+    sigla: "SUA",
+    name: "SCARPE UNISEX ADIDAS (UK)",
+    gender: "unisex",
+    sourceScale: "UK",
+    labels: ["3", "3½", "4", "4½", "5"],
+    aliases: { "4": "3", "5": "4", "37": "4", "36": "3" },
+  };
+
+  it("resolves a native label to itself, not through the alias", () => {
+    expect(parseLabel("4", ukScale)?.canonical).toBe("4");
+    expect(parseLabel("5", ukScale)?.canonical).toBe("5");
+  });
+
+  it("still uses aliases for labels the scale does not own", () => {
+    expect(parseLabel("37", ukScale)?.canonical).toBe("4");
+    expect(parseLabel("36", ukScale)?.canonical).toBe("3");
+  });
+
+  it("keeps case-insensitive alias fallback for non-native spellings", () => {
+    const kidScale: SizeScale = {
+      sigla: "#BN",
+      name: "Bambino Scarpe UK2",
+      gender: "kid",
+      sourceScale: "UK",
+      labels: ["K4", "K5"],
+      aliases: { k4: "K4", k5: "K5" },
+    };
+    expect(parseLabel("k4", kidScale)?.canonical).toBe("K4");
+    expect(parseLabel("K4", kidScale)?.canonical).toBe("K4");
+  });
+
+  it("no seeded scale aliases one of its own labels to a different one", () => {
+    for (const s of ATELIER_SCALES_BY_SIGLA.values()) {
+      const labels = new Set(s.labels.map((l) => l.toLowerCase()));
+      for (const [key, target] of Object.entries(s.aliases)) {
+        if (!labels.has(key.toLowerCase())) continue;
+        expect(
+          target.toLowerCase(),
+          `${s.sigla} aliases its own label "${key}" to "${target}"`,
+        ).toBe(key.toLowerCase());
+      }
+    }
+  });
+});
