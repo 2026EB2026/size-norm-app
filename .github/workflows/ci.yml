@@ -4,49 +4,48 @@ name: CI
 
 jobs:
   CI:
-    name: Node ${{ matrix.node }} and ${{ matrix.manager }}
+    name: Node ${{ matrix.node }}
     runs-on: ubuntu-latest
     strategy:
-      # One broken cell used to cancel the other eight, hiding whether the
-      # failure was specific to a package manager or general.
       fail-fast: false
       matrix:
-        node: [20.19.0, 22, 24]
-        manager: ['npm', 'yarn', 'pnpm']
+        # Node 20 is out: @shopify/polaris-types declares engines
+        # {"node":">=22.18.0","pnpm":">=10.2.0"}, so installing on 20 fails
+        # before any check runs.
+        node: [22, 24]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ matrix.node }}
 
+      # pnpm is the project's package manager: pnpm-lock.yaml (v9) and
+      # pnpm-workspace.yaml are the only lockfiles in the repo. The matrix
+      # used to install with npm and yarn too, which resolved an unpinned
+      # dependency tree — testing something the project never ships.
       - name: Install pnpm
-        if: ${{ matrix.manager == 'pnpm' }}
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
-          # Must satisfy every dependency's engines.pnpm — @shopify/polaris-types
-          # requires >=10.2.0 — and read a lockfileVersion 9.0 lockfile. Pinned
-          # to 8 this step failed on every run.
           version: 10
 
-      - name: Install dependencies using ${{ matrix.manager }}
-        run: ${{ matrix.manager }} install
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Run TypeScript type checking
-        if: ${{ !startsWith(github.head_ref || github.ref_name, 'javascript') }}
-        run: npx tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
       - name: Run ESLint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Run tests
-        run: npm test
+        run: pnpm test
 
       - name: Validate Prisma
-        run: npx prisma generate && npx prisma validate
+        run: pnpm exec prisma generate && pnpm exec prisma validate
 
-      # NOT `npm run build`: that script is the deploy entry point and starts
-      # with `prisma migrate deploy`, which needs a reachable database. CI has
-      # none, so it builds the app directly — schema correctness is already
-      # covered by `prisma validate` above.
+      # NOT `pnpm build`: that script is the deploy entry point and starts
+      # with `prisma migrate deploy`, which needs a reachable database. CI
+      # has none, so it builds the app directly — schema correctness is
+      # already covered by `prisma validate` above.
       - name: Build application
-        run: npx react-router build
+        run: pnpm exec react-router build
