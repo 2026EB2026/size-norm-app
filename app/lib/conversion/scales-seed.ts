@@ -102,7 +102,30 @@ export const ATELIER_SCALES_V1: readonly SizeScale[] = [
     name: "Bambino Scarpe UK1",
     gender: "kid",
     sourceScale: "UK",
-    labels: ["30", "35", "40", "50"],
+    // The ERP writes this ladder as UK sizes in tenths, zero-padded to three
+    // digits: "100" is UK 10, "025" is UK 2.5. It runs through the kid range
+    // and wraps — UK 13 is followed by UK 1 — which is how Dr. Martens sizes
+    // Junior and Youth. A product carries both "130" and "010", so the wrap
+    // is real: "010" here is UK 1 *after* UK 13 (EU 33), not infant UK 1.
+    //
+    // The original parse of taglie.xlsx read only four of these as plain
+    // numbers ("30", "35", "40", "50"), so every Dr. Martens kid product
+    // failed to resolve its size.
+    labels: [
+      "100",
+      "105",
+      "110",
+      "115",
+      "120",
+      "130",
+      "010",
+      "015",
+      "020",
+      "025",
+      "030",
+      "040",
+      "050",
+    ],
     aliases: {},
   },
   {

@@ -52,7 +52,7 @@ const metafieldDefsEnsuredInProcess = new Set<string>();
  * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
  * scales seed or its CM-overrides companion file.
  */
-const BRAND_SEED_REVISION = "v5-adidas-official-chart";
+const BRAND_SEED_REVISION = "v6-drmartens-kids-uk1";
 const brandScalesSeededInProcess = new Set<string>();
 
 /**
@@ -222,11 +222,17 @@ async function upsertScale(
       labels: scale.labels,
       aliases: enrichedAliases,
     },
-    // Refresh aliases on every seed run so newly-added auto-aliases reach
-    // existing shops without requiring uninstall. We never touch other
-    // fields here because the merchant may have edited the scale rows
-    // (e.g. added a label to `labels[]`) and we don't want to clobber.
-    update: { aliases: enrichedAliases },
+    // Refresh aliases AND labels on every seed run so corrections reach
+    // existing shops without requiring uninstall.
+    //
+    // Labels used to be create-only, to protect a merchant who had edited a
+    // scale by hand. That protection cost more than it saved: `#CE` shipped
+    // with four labels parsed wrongly out of taglie.xlsx, and every Dr.
+    // Martens kid product failed to resolve its size with no way to fix it
+    // short of uninstalling. Seed data that cannot be corrected in place is
+    // worse than seed data that can overwrite a hand edit — and the admin
+    // still lets the merchant re-apply theirs afterwards.
+    update: { aliases: enrichedAliases, labels: scale.labels },
   });
 
   if (table === null) return;
