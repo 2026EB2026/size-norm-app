@@ -43,6 +43,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       globalScale: shop.globalScale,
       fractionFormat: shop.fractionFormat,
       manageProductStatus: shop.manageProductStatus,
+      manageErrorTag: shop.manageErrorTag,
       marketScalesJson:
         shop.marketScales !== null
           ? JSON.stringify(shop.marketScales, null, 2)
@@ -67,6 +68,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     marketScalesJson: formData.get("marketScalesJson") ?? "",
     brandDisplayScalesJson: formData.get("brandDisplayScalesJson") ?? "",
     manageProductStatus: formData.get("manageProductStatus"),
+    manageErrorTag: formData.get("manageErrorTag"),
   });
   if (parsed.success === false) {
     return { errors: parsed.error.flatten().fieldErrors };
@@ -111,6 +113,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       marketScales: marketScales as never,
       brandDisplayScales: brandDisplayScales as never,
       manageProductStatus: parsed.data.manageProductStatus,
+      manageErrorTag: parsed.data.manageErrorTag,
     },
   });
 
@@ -212,11 +215,33 @@ export default function Settings() {
               details="Fallita → bozza, riuscita → attivo. Lascia disattivato sui cataloghi in produzione."
               defaultChecked={settings.manageProductStatus}
             />
-            <s-paragraph color="subdued">
-              Il tag <s-text type="strong">size-norm:error</s-text> viene
-              applicato in entrambi i casi: puoi usarlo per filtrare i
-              prodotti da sistemare nell&apos;elenco prodotti di Shopify.
-            </s-paragraph>
+            <s-checkbox
+              name="manageErrorTag"
+              value="on"
+              label="Consenti all'app di applicare il tag size-norm:error"
+              details="Disattivalo mentre stai ancora caricando le guide taglie: il tag smette di comparire sui prodotti che non convertono."
+              defaultChecked={settings.manageErrorTag}
+            />
+            {settings.manageErrorTag ? (
+              <s-paragraph color="subdued">
+                Il tag <s-text type="strong">size-norm:error</s-text> viene
+                applicato ai prodotti che non convertono e rimosso quando
+                tornano a posto: puoi usarlo per filtrarli nell&apos;elenco
+                prodotti di Shopify.
+              </s-paragraph>
+            ) : (
+              <s-banner heading="Tag di errore congelato" tone="info">
+                <s-text>
+                  L&apos;app non tocca più <s-text type="strong">size-norm:error</s-text>:
+                  non lo applica ai prodotti che falliscono e non lo rimuove da
+                  quelli che tornano a convertire. I tag già presenti restano
+                  dove sono — per toglierli serve una modifica in blocco dai
+                  prodotti Shopify. Le conversioni e gli alert continuano
+                  normalmente, quindi la pagina Alert resta la tua lista di
+                  cosa sistemare.
+                </s-text>
+              </s-banner>
+            )}
           </s-stack>
         </s-section>
 
