@@ -26,7 +26,8 @@ import {
 export interface ProductStatusPatch {
   /** Omitted entirely when safe mode is on — status is left untouched. */
   status?: "ACTIVE" | "DRAFT" | "ARCHIVED";
-  tags: string[];
+  /** Omitted when the merchant has turned off error tagging. */
+  tags?: string[];
 }
 
 /**
@@ -47,10 +48,25 @@ export function resolveProductStatusPatch(
   tagsToAdd: string[],
   tagsToRemove: string[],
   manageProductStatus: boolean,
+  manageErrorTag: boolean,
 ): ProductStatusPatch {
-  const tags = applyTagDelta(currentTags, tagsToAdd, tagsToRemove);
-  if (!manageProductStatus) return { tags };
-  return { status: resultKind === "success" ? "ACTIVE" : "DRAFT", tags };
+  const patch: ProductStatusPatch = {};
+  // Each field is omitted rather than set to its current value, so a
+  // productUpdate never rewrites something the merchant has told the app to
+  // keep its hands off. With both switches off the patch is empty and the
+  // caller skips the mutation entirely.
+  if (manageErrorTag) {
+    patch.tags = applyTagDelta(currentTags, tagsToAdd, tagsToRemove);
+  }
+  if (manageProductStatus) {
+    patch.status = resultKind === "success" ? "ACTIVE" : "DRAFT";
+  }
+  return patch;
+}
+
+/** True when the patch would actually change something. */
+export function isEmptyPatch(patch: ProductStatusPatch): boolean {
+  return patch.status === undefined && patch.tags === undefined;
 }
 
 /**
@@ -72,6 +88,14 @@ export interface ShopProcessingSettings {
   /** Record<brand-slug, display scale>, or null when unset. */
   brandDisplayScales: Record<string, unknown> | null;
   manageProductStatus: boolean;
+  /**
+   * When false the app stops touching `size-norm:error` altogether — it
+   * neither applies the tag to a failing product nor strips it from one that
+   * starts converting. Useful while the size guides are still incomplete and
+   * the tag would otherwise spread across the catalogue faster than it can
+   * be cleared.
+   */
+  manageErrorTag: boolean;
 }
 
 /**
@@ -85,10 +109,18 @@ export async function readShopProcessingSettings(
 ): Promise<ShopProcessingSettings> {
   const shop = await prisma.shop.findUnique({
     where: { shopDomain },
-    select: { brandDisplayScales: true, manageProductStatus: true },
+    select: {
+      brandDisplayScales: true,
+      manageProductStatus: true,
+      manageErrorTag: true,
+    },
   });
   if (shop === null) {
-    return { brandDisplayScales: null, manageProductStatus: false };
+    return {
+      brandDisplayScales: null,
+      manageProductStatus: false,
+      manageErrorTag: true,
+    };
   }
   return {
     brandDisplayScales: shop.brandDisplayScales as Record<
@@ -96,6 +128,7 @@ export async function readShopProcessingSettings(
       unknown
     > | null,
     manageProductStatus: shop.manageProductStatus,
+    manageErrorTag: shop.manageErrorTag,
   };
 }
 
@@ -323,8 +356,11 @@ export async function applyProcessingResult(
     result.tagsToAdd,
     result.tagsToRemove,
     settings.manageProductStatus,
+    settings.manageErrorTag,
   );
-  await updateProductStatusAndTags(admin, product.id, patch);
+  if (!isEmptyPatch(patch)) {
+    await updateProductStatusAndTags(admin, product.id, patch);
+  }
 
   // 5. Alerts: replace the unresolved set for this product.
   await prisma.conversionAlert.deleteMany({

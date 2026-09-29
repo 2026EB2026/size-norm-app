@@ -52,6 +52,14 @@ model Shop {
   // missing conversion table.
   manageProductStatus Boolean @default(false)
 
+  // When false the processor leaves `size-norm:error` alone: it is neither
+  // added to a failing product nor removed from one that starts converting.
+  // Defaults to true so nothing changes for shops that never touch it.
+  //
+  // The tag is how a merchant finds broken products, so turning it off is a
+  // deliberate trade: quiet product tags now, no breadcrumb trail later.
+  manageErrorTag Boolean @default(true)
+
   sizeScales        SizeScale[]
   conversionTables  ConversionTable[]
   alerts            ConversionAlert[]

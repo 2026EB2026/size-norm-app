@@ -61,6 +61,40 @@ export const BRAND_OFFICIAL_TABLES_V1: readonly ConversionTable[] = [
       { sourceLabel: "12", us: "12.5", eu: "47⅓", uk: "12", cm: "29.3", jpMm: 293 },
     ],
   },
+  {
+    // Source: drmartens.com/it/it/about/size-guide — the "TAGLIE BAMBINO"
+    // table, read 2026-09-25. Its ETÀ column names each band, so the rows
+    // below are the ones marked JUNIOR; the two largest come from the adult
+    // table on the same page, which continues the same UK ladder (UK 3 = EU
+    // 36 in both).
+    //
+    // Keyed on the ERP's zero-padded tenths ("100" = UK 10). Dr. Martens is
+    // the only vendor using this scale.
+    //
+    // `us` carries the guide's "US BAMBINI" column. It is null on the last
+    // two rows: there the manufacturer only publishes US women's, which is a
+    // different system, and a youth shoe labelled with a women's US size
+    // would mislead. `cm` doubles as the JP mondopoint value — Japanese
+    // sizing is foot length in centimetres.
+    scaleSigla: "#CE",
+    brand: "Dr. Martens",
+    isSeed: true,
+    mappings: [
+      { sourceLabel: "100", us: "11", eu: "28", uk: "10", cm: "17", jpMm: 170 },
+      { sourceLabel: "105", us: "11.5", eu: "28.5", uk: "10.5", cm: "17.5", jpMm: 175 },
+      { sourceLabel: "110", us: "12", eu: "29", uk: "11", cm: "17.5", jpMm: 175 },
+      { sourceLabel: "115", us: "12.5", eu: "30", uk: "11.5", cm: "18", jpMm: 180 },
+      { sourceLabel: "120", us: "13", eu: "31", uk: "12", cm: "18.5", jpMm: 185 },
+      { sourceLabel: "130", us: "1", eu: "32", uk: "13", cm: "19", jpMm: 190 },
+      { sourceLabel: "010", us: "2", eu: "33", uk: "1", cm: "20", jpMm: 200 },
+      { sourceLabel: "015", us: "2.5", eu: "33.5", uk: "1.5", cm: "20.5", jpMm: 205 },
+      { sourceLabel: "020", us: "3", eu: "34", uk: "2", cm: "21", jpMm: 210 },
+      { sourceLabel: "025", us: "3.5", eu: "35", uk: "2.5", cm: "21.5", jpMm: 215 },
+      { sourceLabel: "030", us: "4", eu: "36", uk: "3", cm: "22", jpMm: 220 },
+      { sourceLabel: "040", us: null, eu: "37", uk: "4", cm: "23", jpMm: 230 },
+      { sourceLabel: "050", us: null, eu: "38", uk: "5", cm: "24", jpMm: 240 },
+    ],
+  },
 ];
 
 /** Every vendor string covered by an official chart, lowercased. */

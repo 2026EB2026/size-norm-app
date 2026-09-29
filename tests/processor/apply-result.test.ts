@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyTagDelta,
+  isEmptyPatch,
   computeProductHash,
   resolveBrandDisplayScale,
   resolveProductStatusPatch,
@@ -132,24 +133,24 @@ describe("resolveProductStatusPatch", () => {
   const tags = ["a", "b"];
 
   it("omits status entirely in safe mode (success)", () => {
-    const patch = resolveProductStatusPatch("success", tags, [], [], false);
+    const patch = resolveProductStatusPatch("success", tags, [], [], false, true);
     expect(patch.status).toBeUndefined();
     expect("status" in patch).toBe(false);
   });
 
   it("omits status entirely in safe mode (draft)", () => {
-    const patch = resolveProductStatusPatch("draft", tags, [], [], false);
+    const patch = resolveProductStatusPatch("draft", tags, [], [], false, true);
     expect(patch.status).toBeUndefined();
   });
 
   it("sets ACTIVE on success when the merchant opted in", () => {
     expect(
-      resolveProductStatusPatch("success", tags, [], [], true).status,
+      resolveProductStatusPatch("success", tags, [], [], true, true).status,
     ).toBe("ACTIVE");
   });
 
   it("sets DRAFT on failure when the merchant opted in", () => {
-    expect(resolveProductStatusPatch("draft", tags, [], [], true).status).toBe(
+    expect(resolveProductStatusPatch("draft", tags, [], [], true, true).status).toBe(
       "DRAFT",
     );
   });
@@ -161,12 +162,14 @@ describe("resolveProductStatusPatch", () => {
       [SIZE_NORM_ERROR_TAG],
       [],
       false,
+      true,
     );
     const managed = resolveProductStatusPatch(
       "draft",
       ["keep"],
       [SIZE_NORM_ERROR_TAG],
       [],
+      true,
       true,
     );
     expect(safe.tags).toEqual(["keep", SIZE_NORM_ERROR_TAG]);
@@ -180,6 +183,7 @@ describe("resolveProductStatusPatch", () => {
       [],
       [SIZE_NORM_ERROR_TAG],
       false,
+      true,
     );
     expect(patch.tags).toEqual(["keep"]);
   });
@@ -211,5 +215,66 @@ describe("resolveBrandDisplayScale", () => {
 
   it("ignores non-string values", () => {
     expect(resolveBrandDisplayScale({ asics: 42 }, "ASICS")).toBe("");
+  });
+});
+
+describe("resolveProductStatusPatch — error tagging switched off", () => {
+  it("omits tags entirely, so productUpdate never rewrites them", () => {
+    const patch = resolveProductStatusPatch(
+      "draft",
+      ["keep"],
+      [SIZE_NORM_ERROR_TAG],
+      [],
+      false,
+      false,
+    );
+    expect("tags" in patch).toBe(false);
+    expect(patch.tags).toBeUndefined();
+  });
+
+  it("does not strip an error tag a product already carries", () => {
+    // Freezing means freezing in both directions: a product that starts
+    // converting keeps the tag until the merchant turns tagging back on.
+    const patch = resolveProductStatusPatch(
+      "success",
+      ["keep", SIZE_NORM_ERROR_TAG],
+      [],
+      [SIZE_NORM_ERROR_TAG],
+      false,
+      false,
+    );
+    expect(patch.tags).toBeUndefined();
+  });
+
+  it("still manages status when the merchant opted into that", () => {
+    const patch = resolveProductStatusPatch(
+      "draft",
+      ["keep"],
+      [SIZE_NORM_ERROR_TAG],
+      [],
+      true,
+      false,
+    );
+    expect(patch.status).toBe("DRAFT");
+    expect(patch.tags).toBeUndefined();
+  });
+
+  it("produces an empty patch when both switches are off", () => {
+    const patch = resolveProductStatusPatch(
+      "draft",
+      ["keep"],
+      [SIZE_NORM_ERROR_TAG],
+      [],
+      false,
+      false,
+    );
+    expect(isEmptyPatch(patch)).toBe(true);
+  });
+
+  it("is not empty when either switch is on", () => {
+    const tagged = resolveProductStatusPatch("draft", [], [], [], false, true);
+    const statused = resolveProductStatusPatch("draft", [], [], [], true, false);
+    expect(isEmptyPatch(tagged)).toBe(false);
+    expect(isEmptyPatch(statused)).toBe(false);
   });
 });

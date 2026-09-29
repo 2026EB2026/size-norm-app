@@ -103,3 +103,58 @@ describe("adidas official chart on SUA", () => {
     expect(r?.fromBrandSpecific).toBe(false);
   });
 });
+
+describe("Dr. Martens kids on #CE", () => {
+  const scale = ATELIER_SCALES_BY_SIGLA.get("#CE");
+  const tables = BRAND_OFFICIAL_TABLES_V1.filter((t) => t.scaleSigla === "#CE");
+
+  function convert(label: string, vendor = "Dr. Martens") {
+    if (scale === undefined) throw new Error("#CE missing from seed");
+    const parsed = parseLabel(label, scale);
+    if (parsed === null) return null;
+    return lookupConversion("#CE", vendor, parsed.canonical, tables);
+  }
+
+  it("resolves every size the catalogue actually uses", () => {
+    // The two product shapes: "J" (Junior) and "Y" (Youth).
+    const inCatalogue = [
+      "100", "110", "115", "120", "130", "010", "020", "025", "030", // J
+      "040", "050", // Y
+    ];
+    for (const label of inCatalogue) {
+      const r = convert(label);
+      expect(r, `variante ${label}`).not.toBeNull();
+      expect(r?.matrix.eu, `EU per ${label}`).toBeTruthy();
+      expect(r?.matrix.uk, `UK per ${label}`).toBeTruthy();
+    }
+  });
+
+  it("reads the zero-padded code as UK tenths", () => {
+    expect(convert("100")?.matrix.uk).toBe("10");
+    expect(convert("025")?.matrix.uk).toBe("2.5");
+    expect(convert("050")?.matrix.uk).toBe("5");
+  });
+
+  it("puts UK 1 after UK 13, not in the infant range", () => {
+    // A single product carries both "130" and "010"; the ladder wraps, so
+    // "010" is EU 33 (junior) and never EU 17 (3-6 months).
+    expect(convert("130")?.matrix.eu).toBe("32");
+    expect(convert("010")?.matrix.eu).toBe("33");
+  });
+
+  it("keeps the EU ladder strictly increasing along the wrap", () => {
+    const order = ["100", "105", "110", "115", "120", "130", "010", "015", "020", "025", "030", "040", "050"];
+    const eu = order.map((l) => Number(convert(l)?.matrix.eu));
+    for (let i = 1; i < eu.length; i++) {
+      expect(eu[i] as number, `${order[i]} dopo ${order[i - 1]}`).toBeGreaterThan(
+        eu[i - 1] as number,
+      );
+    }
+  });
+
+  it("leaves US empty where the manufacturer publishes only women's", () => {
+    expect(convert("040")?.matrix.us).toBeNull();
+    expect(convert("050")?.matrix.us).toBeNull();
+    expect(convert("030")?.matrix.us).toBe("4");
+  });
+});

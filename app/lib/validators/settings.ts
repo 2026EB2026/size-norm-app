@@ -43,6 +43,10 @@ export const settingsFormSchema = z.object({
     .union([z.literal("on"), z.literal("true"), z.null(), z.undefined()])
     .transform((v) => v === "on" || v === "true")
     .catch(false),
+  manageErrorTag: z
+    .union([z.literal("on"), z.literal("true"), z.null(), z.undefined()])
+    .transform((v) => v === "on" || v === "true")
+    .catch(false),
 });
 
 export type SettingsFormInput = z.infer<typeof settingsFormSchema>;
