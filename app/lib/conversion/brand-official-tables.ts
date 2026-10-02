@@ -71,6 +71,16 @@ export const BRAND_OFFICIAL_TABLES_V1: readonly ConversionTable[] = [
     // Keyed on the ERP's zero-padded tenths ("100" = UK 10). Dr. Martens is
     // the only vendor using this scale.
     //
+    // The merchant's guide pack contains a "Tabella taglie scarpe italiana"
+    // filed under Dr Martens that reads IT 39 = UK 5 = 24.5 cm, contradicting
+    // the rows below. It is not a Dr. Martens chart: the same bytes also sit
+    // in the Stone Island folder, the image carries a country picker rather
+    // than brand chrome, and its IT-UK gap is a flat 34 on every row -- the
+    // generic Italian men's ladder. Dr. Martens' own gap widens with size
+    // (UK 3 = EU 36, UK 15 = EU 50), which is what the chart below follows.
+    // Re-checked against drmartens.com/eu/en_eu/about/size-guide on
+    // 2026-10-02.
+    //
     // `us` carries the guide's "US BAMBINI" column. It is null on the last
     // two rows: there the manufacturer only publishes US women's, which is a
     // different system, and a youth shoe labelled with a women's US size
