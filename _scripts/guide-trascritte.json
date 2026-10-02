@@ -1376,7 +1376,8 @@
    ]
   ],
   "colonne": "[EU, UK, US donna, cm]",
-  "note": "la colonna US e' SOLO US donna: manca US uomo. Anomalia: UK 5.5 (EU 38) e UK 6 (EU 39) hanno entrambi 24.5 cm."
+  "note": "la colonna US e' SOLO US donna: manca US uomo. Anomalia: UK 5.5 (EU 38) e UK 6 (EU 39) hanno entrambi 24.5 cm.",
+  "scarto_variabile_atteso": true
  },
  {
   "brand": "Veja",
@@ -1469,7 +1470,8 @@
     "30.6"
    ]
   ],
-  "note": "EU 39-42 sono celle doppie W/M (donna/uomo): su quelle righe la taglia UK e US dipende dal genere. Scarto EU-UK 33 sotto, 34 sopra."
+  "note": "EU 39-42 sono celle doppie W/M (donna/uomo): su quelle righe la taglia UK e US dipende dal genere. Scarto EU-UK 33 sotto, 34 sopra.",
+  "scarto_variabile_atteso": true
  },
  {
   "brand": "Clarks",
@@ -1640,7 +1642,8 @@
     "32.3"
    ]
   ],
-  "note": "donna.png e uomo.png sono lo stesso ladder (UK 5 = EU 38 = 237 mm in entrambi): un'unica scala UK 2-15. NESSUNA colonna US nella guida."
+  "note": "donna.png e uomo.png sono lo stesso ladder (UK 5 = EU 38 = 237 mm in entrambi): un'unica scala UK 2-15. NESSUNA colonna US nella guida.",
+  "scarto_variabile_atteso": true
  },
  {
   "brand": "Crocs",
@@ -1751,7 +1754,8 @@
     "24.2"
    ]
   ],
-  "note": "solo tabelle BAMBINO: manca del tutto la tabella adulto M/W combinata. La colonna 'Lunghezza piede EU' e' in realta' un intervallo di taglie EU, non centimetri; i cm qui derivano dalla colonna mm."
+  "note": "solo tabelle BAMBINO: manca del tutto la tabella adulto M/W combinata. La colonna 'Lunghezza piede EU' e' in realta' un intervallo di taglie EU, non centimetri; i cm qui derivano dalla colonna mm.",
+  "scarto_variabile_atteso": true
  },
  {
   "brand": "Premiata",
@@ -1955,7 +1959,8 @@
     "28"
    ]
   ],
-  "note": "QUESTA e' la vera scala Dr. Martens, e combacia con drmartens.com: UK 3 = EU 36 = 22 cm, UK 5 = EU 38 = 24 cm. Conferma che il file sotto 'Dr martens' (IT 39 = UK 5 = 24.5) non e' del brand. Colonna US = US donna."
+  "note": "QUESTA e' la vera scala Dr. Martens, e combacia con drmartens.com: UK 3 = EU 36 = 22 cm, UK 5 = EU 38 = 24 cm. Conferma che il file sotto 'Dr martens' (IT 39 = UK 5 = 24.5) non e' del brand. Colonna US = US donna.",
+  "scarto_variabile_atteso": true
  },
  {
   "brand": "Hunter",
@@ -2036,7 +2041,8 @@
     null
    ]
   ],
-  "note": "SOLO la coppia UK-EU e' utilizzabile. Le colonne pollici/mm/cm/eta' sono incoerenti: UK4=EU21 dato per 262 mm e 24.9 cm (mm e cm non concordano fra loro) con 'eta' 14 anni', valori da scarpa adulta su una taglia da bambino piccolo."
+  "note": "SOLO la coppia UK-EU e' utilizzabile. Le colonne pollici/mm/cm/eta' sono incoerenti: UK4=EU21 dato per 262 mm e 24.9 cm (mm e cm non concordano fra loro) con 'eta' 14 anni', valori da scarpa adulta su una taglia da bambino piccolo.",
+  "scarto_variabile_atteso": true
  },
  {
   "brand": "Jude",
@@ -3814,5 +3820,1139 @@
    ]
   ],
   "note": "DUPLICATO RISOLTO: contenuto identico cella per cella all'altra cartella 'stella', solo impaginato diverso. Nessun conflitto: si tiene questa, piu' recente."
+ },
+ {
+  "brand": "MM6 Maison Margiela",
+  "gender": "women",
+  "fonte": "mm6 /donnaù.png",
+  "asse": "IT/EU",
+  "rows": [
+   [
+    "35",
+    "2",
+    "5",
+    "22"
+   ],
+   [
+    "35.5",
+    "2.5",
+    "5.5",
+    "22.5"
+   ],
+   [
+    "36",
+    "3",
+    "6",
+    "23"
+   ],
+   [
+    "36.5",
+    "3.5",
+    "6.5",
+    "23.5"
+   ],
+   [
+    "37",
+    "4",
+    "7",
+    "24"
+   ],
+   [
+    "37.5",
+    "4.5",
+    "7.5",
+    "24.5"
+   ],
+   [
+    "38",
+    "5",
+    "8",
+    "25"
+   ],
+   [
+    "38.5",
+    "5.5",
+    "8.5",
+    "25.5"
+   ],
+   [
+    "39",
+    "6",
+    "9",
+    "26"
+   ],
+   [
+    "39.5",
+    "6.5",
+    "9.5",
+    "26.5"
+   ],
+   [
+    "40",
+    "7",
+    "10",
+    "27"
+   ],
+   [
+    "40.5",
+    "7.5",
+    "10.5",
+    "27.5"
+   ],
+   [
+    "41",
+    "8",
+    "11",
+    "28"
+   ],
+   [
+    "41.5",
+    "8.5",
+    "11.5",
+    "28.5"
+   ],
+   [
+    "42",
+    "9",
+    "12",
+    "29"
+   ]
+  ]
+ },
+ {
+  "brand": "Khaite",
+  "gender": "women",
+  "fonte": "Khaite/Schermata 2026-09-29 alle 15.53.07.png",
+  "asse": "IT/EU",
+  "rows": [
+   [
+    "35",
+    "2",
+    "5",
+    null
+   ],
+   [
+    "35.5",
+    "2.5",
+    "5.5",
+    null
+   ],
+   [
+    "36",
+    "3",
+    "6",
+    null
+   ],
+   [
+    "36.5",
+    "3.5",
+    "6.5",
+    null
+   ],
+   [
+    "37",
+    "4",
+    "7",
+    null
+   ],
+   [
+    "37.5",
+    "4.5",
+    "7.5",
+    null
+   ],
+   [
+    "38",
+    "5",
+    "8",
+    null
+   ],
+   [
+    "38.5",
+    "5.5",
+    "8.5",
+    null
+   ],
+   [
+    "39",
+    "6",
+    "9",
+    null
+   ],
+   [
+    "39.5",
+    "6.5",
+    "9.5",
+    null
+   ],
+   [
+    "40",
+    "7",
+    "10",
+    null
+   ],
+   [
+    "40.5",
+    "7.5",
+    "10.5",
+    null
+   ],
+   [
+    "41",
+    "8",
+    "11",
+    null
+   ],
+   [
+    "41.5",
+    "8.5",
+    "11.5",
+    null
+   ],
+   [
+    "42",
+    "9",
+    "12",
+    null
+   ]
+  ],
+  "note": "nessuna colonna centimetri. Nota: la colonna FR e' IT+1, coerente con la convenzione francese."
+ },
+ {
+  "brand": "Kenzo",
+  "gender": "women",
+  "fonte": "Kenzo /Tabella taglie Kenzo e lunghezza piede.png",
+  "asse": "IT/EU",
+  "rows": [
+   [
+    "34",
+    "3",
+    "3",
+    "22.3"
+   ],
+   [
+    "35",
+    "3.5",
+    "3.5",
+    "22.7"
+   ],
+   [
+    "36",
+    "4.5",
+    "4.5",
+    "23.5"
+   ],
+   [
+    "37",
+    "5.5",
+    "5.5",
+    "24"
+   ],
+   [
+    "38",
+    "6",
+    "6",
+    "24.7"
+   ],
+   [
+    "39",
+    "7",
+    "7",
+    "25.4"
+   ],
+   [
+    "40",
+    "7.5",
+    "7.5",
+    "26.1"
+   ],
+   [
+    "41",
+    "8.5",
+    "8.5",
+    "26.7"
+   ],
+   [
+    "42",
+    "9.5",
+    "9.5",
+    "27.4"
+   ],
+   [
+    "43",
+    "10",
+    "10",
+    "28"
+   ],
+   [
+    "44",
+    "11",
+    "11",
+    "28.7"
+   ],
+   [
+    "45",
+    "11.5",
+    "11.5",
+    "29.4"
+   ]
+  ],
+  "note": "DUE PROBLEMI. 1) L'etichetta Kenzo e' la FR, non la IT: Kenzo 35 = IT 34, come Isabel Marant. 2) La colonna US e' una copia esatta della UK (3/3, 3.5/3.5, 4.5/4.5 ...), cosa impossibile: US inutilizzabile. Anche i gradini UK sono irregolari."
+ },
+ {
+  "brand": "Etro",
+  "gender": "women",
+  "fonte": "Etro/Immagine ChatGPT 29 set 2026, 16_42_42.png",
+  "asse": "IT/EU",
+  "rows": [
+   [
+    "35",
+    "2",
+    "5",
+    "23"
+   ],
+   [
+    "36",
+    "3",
+    "6",
+    "23.65"
+   ],
+   [
+    "37",
+    "4",
+    "7",
+    "24.3"
+   ],
+   [
+    "38",
+    "5",
+    "8",
+    "24.95"
+   ],
+   [
+    "39",
+    "6",
+    "9",
+    "25.6"
+   ],
+   [
+    "40",
+    "7",
+    "10",
+    "26.25"
+   ],
+   [
+    "41",
+    "8",
+    "11",
+    "26.9"
+   ],
+   [
+    "42",
+    "9",
+    "12",
+    "27.55"
+   ]
+  ],
+  "note": "solo numeri interi; cm ricavati dalla riga mm (misura del piede)."
+ },
+ {
+  "brand": "Staud",
+  "gender": "women",
+  "fonte": "Staud/Tabella conversione taglie scarpe (3).png",
+  "asse": "IT/EU",
+  "rows": [
+   [
+    "35",
+    "2",
+    "5",
+    "22"
+   ],
+   [
+    "35.5",
+    "2.5",
+    "5.5",
+    "22.5"
+   ],
+   [
+    "36",
+    "3",
+    "6",
+    "23"
+   ],
+   [
+    "36.5",
+    "3.5",
+    "6.5",
+    "23.5"
+   ],
+   [
+    "37",
+    "4",
+    "7",
+    "24"
+   ],
+   [
+    "37.5",
+    "4.5",
+    "7.5",
+    "24.5"
+   ],
+   [
+    "38",
+    "5",
+    "8",
+    "25"
+   ],
+   [
+    "38.5",
+    "5.5",
+    "8.5",
+    "25.5"
+   ],
+   [
+    "39",
+    "6",
+    "9",
+    "26"
+   ],
+   [
+    "39.5",
+    "6.5",
+    "9.5",
+    "26.5"
+   ],
+   [
+    "40",
+    "7",
+    "10",
+    "27"
+   ],
+   [
+    "40.5",
+    "7.5",
+    "10.5",
+    "27.5"
+   ],
+   [
+    "41",
+    "8",
+    "11",
+    "28"
+   ],
+   [
+    "41.5",
+    "8.5",
+    "11.5",
+    "28.5"
+   ],
+   [
+    "42",
+    "9",
+    "12",
+    "29"
+   ]
+  ],
+  "note": "ETICHETTE SCAMBIATE: la riga marcata 'US' contiene in realta' le taglie EU (35-42) e l'intestazione in alto e' la taglia US (5-12). Una volta rietichettata il ladder e' quello donna standard."
+ },
+ {
+  "brand": "MMK",
+  "gender": "women",
+  "fonte": "MMK/Schermata 2026-09-29 alle 10.32.12.png",
+  "asse": "IT",
+  "rows": [
+   [
+    "35",
+    "2",
+    "5",
+    null
+   ],
+   [
+    "35.5",
+    "2.5",
+    "5.5",
+    null
+   ],
+   [
+    "36",
+    "3",
+    "6",
+    null
+   ],
+   [
+    "36.5",
+    "3.5",
+    "6.5",
+    null
+   ],
+   [
+    "37",
+    "4",
+    "7",
+    null
+   ],
+   [
+    "37.5",
+    "5",
+    "7.5",
+    null
+   ],
+   [
+    "38",
+    "5.5",
+    "8",
+    null
+   ],
+   [
+    "38.5",
+    "6",
+    "8.5",
+    null
+   ],
+   [
+    "39",
+    "7",
+    "9",
+    null
+   ],
+   [
+    "39.5",
+    "7.5",
+    "9.5",
+    null
+   ],
+   [
+    "40",
+    "8",
+    "10",
+    null
+   ],
+   [
+    "40.5",
+    "8.5",
+    "10.5",
+    null
+   ],
+   [
+    "41",
+    "9.5",
+    "11",
+    null
+   ],
+   [
+    "42",
+    "10",
+    "12",
+    null
+   ]
+  ],
+  "note": "la guida tiene EU e IT come due colonne DIVERSE, che divergono fino a 1.5 numeri (EU 43.5 = IT 42). Entrambe le scale hanno gradini mancanti (EU salta 37.5, 39.5, 42, 43; UK salta 4.5, 6.5, 9). Qui ho tenuto la colonna IT. Nessun centimetro."
+ },
+ {
+  "brand": "Bonpoint",
+  "gender": "kid",
+  "fonte": "Bon Point/Immagine ChatGPT 29 set 2026, 16_32_16.png",
+  "asse": "EU",
+  "rows": [
+   [
+    "16",
+    "0.5",
+    "1",
+    "9.7"
+   ],
+   [
+    "17",
+    "1.5",
+    "2",
+    "10.4"
+   ],
+   [
+    "18",
+    "2",
+    "3.5",
+    "11"
+   ],
+   [
+    "19",
+    "3",
+    "3.5",
+    "11.7"
+   ],
+   [
+    "20",
+    "4",
+    "4.5",
+    "12.3"
+   ],
+   [
+    "21",
+    "5",
+    "5.5",
+    "13"
+   ],
+   [
+    "22",
+    "5.5",
+    "6.5",
+    "13.5"
+   ],
+   [
+    "23",
+    "6.5",
+    "7",
+    "14.2"
+   ],
+   [
+    "24",
+    "7",
+    "8",
+    "14.8"
+   ],
+   [
+    "25",
+    "8",
+    "8.5",
+    "15.4"
+   ],
+   [
+    "26",
+    "9",
+    "9.5",
+    "16"
+   ],
+   [
+    "27",
+    "9.5",
+    "10",
+    "16.4"
+   ],
+   [
+    "28",
+    "10.5",
+    "11",
+    "17.5"
+   ],
+   [
+    "29",
+    "11.5",
+    "12",
+    "18"
+   ],
+   [
+    "30",
+    "12",
+    "12.5",
+    "18.5"
+   ],
+   [
+    "31",
+    "13",
+    "13.5",
+    "19"
+   ],
+   [
+    "32",
+    "13.5",
+    "1",
+    "19.8"
+   ],
+   [
+    "33",
+    "1.5",
+    "2",
+    "20.5"
+   ],
+   [
+    "34",
+    "2",
+    "2.5",
+    "21"
+   ],
+   [
+    "35",
+    "3",
+    "3.5",
+    "21.7"
+   ],
+   [
+    "36",
+    "3.5",
+    "4.5",
+    "22.4"
+   ],
+   [
+    "37",
+    "4",
+    "5",
+    "23.6"
+   ],
+   [
+    "38",
+    "4.5",
+    "6",
+    "24.3"
+   ],
+   [
+    "39",
+    "5.5",
+    "7",
+    "25"
+   ],
+   [
+    "40",
+    "6.5",
+    "8",
+    "25.6"
+   ]
+  ],
+  "note": "il salto UK a EU 32 (13.5 poi 1.5) e' corretto: e' il passaggio dalla numerazione bambino a quella adulto. Anomalie: US 3.5 compare su due righe (EU 18 e 19) e i gradini UK sono irregolari (da 7 si passa a 8 saltando 7.5).",
+  "scarto_variabile_atteso": true
+ },
+ {
+  "brand": "Aeyede",
+  "gender": "women",
+  "fonte": "Aeyede/Guida alle taglie delle scarpe.png",
+  "asse": "EU",
+  "rows": [
+   [
+    "35",
+    "2",
+    "4",
+    "22.1"
+   ],
+   [
+    "35.5",
+    "2.5",
+    "4.5",
+    "22.5"
+   ],
+   [
+    "36",
+    "3",
+    "5",
+    "23"
+   ],
+   [
+    "36.5",
+    "3.5",
+    "5.5",
+    "23.3"
+   ],
+   [
+    "37",
+    "4",
+    "6",
+    "23.8"
+   ],
+   [
+    "37.5",
+    "4.5",
+    "6.5",
+    "24"
+   ],
+   [
+    "38",
+    "5",
+    "7",
+    "24.3"
+   ],
+   [
+    "38.5",
+    "5.5",
+    "7.5",
+    "24.7"
+   ],
+   [
+    "39",
+    "6",
+    "8",
+    "25"
+   ],
+   [
+    "39.5",
+    "6.5",
+    "8.5",
+    "25.4"
+   ],
+   [
+    "40",
+    "7",
+    "9",
+    "25.8"
+   ],
+   [
+    "40.5",
+    "7.5",
+    "9.5",
+    "26"
+   ],
+   [
+    "41",
+    "8",
+    "10",
+    "26.2"
+   ],
+   [
+    "42",
+    "9",
+    "11",
+    "27"
+   ],
+   [
+    "43",
+    "9.5",
+    "11.5",
+    "29.4"
+   ]
+  ],
+  "note": "US-UK = 2 (convenzione 'US donna = UK+2'), diversa dal +3 usato dalle maison italiane del pacchetto. Anomalia: i cm salgono di ~0.3 per gradino ma balzano da 27.0 a 29.4 fra EU 42 e 43."
+ },
+ {
+  "brand": "Alexander Wang",
+  "gender": "women",
+  "fonte": "alexander wang e alexander wang t /Immagine ChatGPT 29 set 2026, 16_29_04.png",
+  "asse": "EU",
+  "rows": [
+   [
+    "34",
+    null,
+    "4",
+    null
+   ],
+   [
+    "34.5",
+    null,
+    "4.5",
+    null
+   ],
+   [
+    "35",
+    null,
+    "5",
+    null
+   ],
+   [
+    "35.5",
+    null,
+    "5.5",
+    null
+   ],
+   [
+    "36",
+    null,
+    "6",
+    null
+   ],
+   [
+    "36.5",
+    null,
+    "6.5",
+    null
+   ],
+   [
+    "37",
+    null,
+    "7",
+    null
+   ],
+   [
+    "37.5",
+    null,
+    "7.5",
+    null
+   ],
+   [
+    "38",
+    null,
+    "8",
+    null
+   ],
+   [
+    "38.5",
+    null,
+    "8.5",
+    null
+   ],
+   [
+    "39",
+    null,
+    "9",
+    null
+   ],
+   [
+    "39.5",
+    null,
+    "9.5",
+    null
+   ],
+   [
+    "40",
+    null,
+    "10",
+    null
+   ],
+   [
+    "40.5",
+    null,
+    "10.5",
+    null
+   ],
+   [
+    "41",
+    null,
+    "11",
+    null
+   ],
+   [
+    "41.5",
+    null,
+    "11.5",
+    null
+   ],
+   [
+    "42",
+    null,
+    "12",
+    null
+   ],
+   [
+    "42.5",
+    null,
+    "12.5",
+    null
+   ]
+  ],
+  "note": "CATTURA PARZIALE: solo US ed EU, nessuna colonna UK ne' centimetri. Da rifare."
+ },
+ {
+  "brand": "JW Anderson",
+  "gender": "women",
+  "fonte": "Jw anderson /Immagine ChatGPT 29 set 2026, 17_07_08.png",
+  "asse": "IT/FR",
+  "rows": [
+   [
+    "35",
+    "2.5",
+    "5",
+    "22.8"
+   ],
+   [
+    "35.5",
+    "3",
+    "5.5",
+    "23.1"
+   ],
+   [
+    "36",
+    "3.5",
+    "6",
+    "23.5"
+   ],
+   [
+    "37",
+    "4",
+    "6.5",
+    "23.8"
+   ],
+   [
+    "37.5",
+    "4.5",
+    "7",
+    "24.1"
+   ],
+   [
+    "38",
+    "5",
+    "7.5",
+    "24.5"
+   ],
+   [
+    "38.5",
+    "5.5",
+    "8",
+    "24.8"
+   ],
+   [
+    "39",
+    "6",
+    "8.5",
+    "25.1"
+   ],
+   [
+    "40",
+    "6.5",
+    "9",
+    "25.4"
+   ],
+   [
+    "41",
+    "7",
+    "9.5",
+    "25.7"
+   ],
+   [
+    "42",
+    "7.5",
+    "10",
+    "26"
+   ],
+   [
+    "43",
+    "8",
+    "10.5",
+    "26.7"
+   ],
+   [
+    "44",
+    "9.5",
+    "12",
+    "27.3"
+   ],
+   [
+    "45",
+    "10.5",
+    "13",
+    "27.9"
+   ]
+  ],
+  "note": "NON IMPORTABILE. Da IT 39 in su un gradino IT intero vale mezzo gradino UK (39->40->41->42 contro UK 6->6.5->7->7.5), quindi lo scarto IT-UK scivola da 32.5 a 34.5; fra IT 43 e 44 la UK salta di 1.5. Inoltre le mezze taglie sono scritte '35-5' invece di '35.5'."
+ },
+ {
+  "brand": "Givenchy",
+  "gender": "women",
+  "fonte": "Givenchy/donna.png",
+  "asse": "IT/EU",
+  "rows": [
+   [
+    "35",
+    "2.5",
+    "4.5",
+    "23.5"
+   ],
+   [
+    "35H",
+    "2.75",
+    "4.75",
+    "23.8"
+   ],
+   [
+    "36",
+    "3",
+    "5",
+    "24.2"
+   ],
+   [
+    "36H",
+    "3.5",
+    "5.5",
+    "24.5"
+   ],
+   [
+    "37",
+    "4",
+    "6",
+    "24.8"
+   ],
+   [
+    "37H",
+    "4.5",
+    "6.5",
+    "25.2"
+   ],
+   [
+    "38",
+    "4.75",
+    "6.75",
+    "25.5"
+   ],
+   [
+    "38H",
+    "5",
+    "7",
+    "25.8"
+   ],
+   [
+    "39",
+    "5.5",
+    "7.5",
+    "26.2"
+   ],
+   [
+    "39H",
+    "6",
+    "8",
+    "26.5"
+   ],
+   [
+    "40",
+    "6.5",
+    "8.5",
+    "26.8"
+   ],
+   [
+    "40H",
+    "6.75",
+    "8.75",
+    "27.2"
+   ],
+   [
+    "41",
+    "7",
+    "9",
+    "27.4"
+   ]
+  ],
+  "note": "stessa anomalia di Dsquared2: quarti di taglia UK/US (2.75, 4.75, 6.75). Comparendo identica su due brand e' una convenzione del widget di origine, non un errore di trascrizione — ma resta da arrotondare al mezzo punto prima di finire in tabella. La 'H' e' il mezzo numero."
+ },
+ {
+  "brand": "Givenchy / Jil Sander",
+  "gender": "men",
+  "fonte": "Givenchy/uomo.png",
+  "asse": "IT/EU",
+  "rows": [
+   [
+    "39",
+    "5",
+    "6",
+    "25.3"
+   ],
+   [
+    "40",
+    "6",
+    "7",
+    "26"
+   ],
+   [
+    "41",
+    "7",
+    "8",
+    "26.6"
+   ],
+   [
+    "42",
+    "8",
+    "9",
+    "27.3"
+   ],
+   [
+    "43",
+    "9",
+    "10",
+    "28"
+   ],
+   [
+    "44",
+    "10",
+    "11",
+    "28.6"
+   ],
+   [
+    "45",
+    "11",
+    "12",
+    "29.3"
+   ]
+  ],
+  "note": "DUPLICATO RISOLTO: file byte-identico sotto Givenchy e Jil sander. E' il widget generico uomo (scarto IT-UK 34, US-UK 1), valido per entrambi i brand; la colonna 'altezza della calzata 7.5 cm' e' un segnaposto, uguale su ogni riga."
  }
 ]
