@@ -1,3 +1,4 @@
+import { GUIDE_UFFICIALI_TABLES } from "./guide-ufficiali-tables";
 import type { ConversionTable } from "./types";
 
 /**
@@ -25,7 +26,7 @@ import type { ConversionTable } from "./types";
  *      Inventing a value is worse than showing nothing.
  *   4. `brand` must match the Shopify vendor string of the products.
  */
-export const BRAND_OFFICIAL_TABLES_V1: readonly ConversionTable[] = [
+const HAND_WRITTEN: readonly ConversionTable[] = [
   {
     // Source: adidas.it/aiuto/size_charts/men-shoes — the unisex adult
     // footwear chart, read 2026-09-11.
@@ -105,6 +106,21 @@ export const BRAND_OFFICIAL_TABLES_V1: readonly ConversionTable[] = [
       { sourceLabel: "050", us: null, eu: "38", uk: "5", cm: "24", jpMm: 240 },
     ],
   },
+];
+
+/**
+ * Every official manufacturer chart the app seeds.
+ *
+ * `HAND_WRITTEN` holds the two charts transcribed by hand (adidas on the `SUA`
+ * scale, Dr. Martens kids on `#CE`); the rest come from the brands' own size
+ * guides and are generated — see guide-ufficiali-tables.ts.
+ *
+ * Order matters only in that `lookupConversion` takes the FIRST table matching
+ * (scaleSigla, brand), so the hand-written ones win where both exist.
+ */
+export const BRAND_OFFICIAL_TABLES_V1: readonly ConversionTable[] = [
+  ...HAND_WRITTEN,
+  ...GUIDE_UFFICIALI_TABLES,
 ];
 
 /** Every vendor string covered by an official chart, lowercased. */

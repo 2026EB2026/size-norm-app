@@ -3030,7 +3030,8 @@
     "27"
    ]
   ],
-  "note": "ATTENZIONE: l'etichetta Marant NON e' la taglia IT. Marant 35 = IT 34 (la taglia Marant coincide con la FR, una in piu' della IT). Se trattata come IT sposta tutto di un numero pieno. Anomalia: la riga JP sale 0.5 per gradino ma salta di 1 fra 38-39 e 41-42."
+  "note": "ATTENZIONE: l'etichetta Marant NON e' la taglia IT. Marant 35 = IT 34 (la taglia Marant coincide con la FR, una in piu' della IT). Se trattata come IT sposta tutto di un numero pieno. Anomalia: la riga JP sale 0.5 per gradino ma salta di 1 fra 38-39 e 41-42.",
+  "base_e_fr": true
  },
  {
   "brand": "Isabel Marant",
@@ -3081,7 +3082,8 @@
     "29"
    ]
   ],
-  "note": "stesso scarto: Marant 39 = IT 38 = UK 5 = US 6. Conferma che l'etichetta Marant e' la FR. Riga JP con gradini irregolari."
+  "note": "stesso scarto: Marant 39 = IT 38 = UK 5 = US 6. Conferma che l'etichetta Marant e' la FR. Riga JP con gradini irregolari.",
+  "base_e_fr": true
  },
  {
   "brand": "Jacquemus",
@@ -4074,7 +4076,8 @@
   "note": "verificato su sito ufficiale il 2026-10-06: CORRETTA. L'immagine del pacchetto aveva la colonna US copiata dalla UK: era sbagliata. Il sito da' US diversa da UK (Kenzo 35 = UK 2.5 = US 4). Confermato anche che l'etichetta Kenzo e' la FR: Kenzo 35 = IT 34. Il ladder resta irregolare, ma e' quello pubblicato dal brand.",
   "verificato": "kenzo.com/it-it/faq#eu_sizechart",
   "colonne": "[Kenzo/FR, UK, US, cm] - la IT e' Kenzo-1 (Kenzo 35 = IT 34)",
-  "scarto_variabile_atteso": true
+  "scarto_variabile_atteso": true,
+  "base_e_fr": true
  },
  {
   "brand": "Etro",
@@ -4995,6 +4998,7 @@
   ],
   "colonne": "[Kenzo/FR, UK, US, cm] - la IT e' Kenzo-1 (Kenzo 39 = IT 38)",
   "note": "presa direttamente dal sito: nel pacchetto la tabella uomo non c'era.",
-  "scarto_variabile_atteso": true
+  "scarto_variabile_atteso": true,
+  "base_e_fr": true
  }
 ]
