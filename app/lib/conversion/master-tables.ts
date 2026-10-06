@@ -12,12 +12,28 @@
  * jpMm) is unique within the table, so reverse-lookup by any column is
  * deterministic.
  *
- * NOTE FOR THE MERCHANT: the seed uses a 1:1 Brannock-style mapping. Italian
- * retail conventions sometimes round differently (e.g. Italian tags often
- * print EU 41 ≈ US 8, while strict Brannock places EU 41 closer to US 9). The
- * merchant should validate the seed during M3 and create brand-specific
- * Conversion Tables in admin UI for any brand that deviates (e.g. Gucci runs
- * small, Adidas runs large).
+ * THE UK AND US COLUMNS FOLLOW THE ITALIAN RETAIL CONVENTION, NOT BRANNOCK.
+ * Every one of the 27 official brand guides collected in October 2026 agrees
+ * on the same two offsets, and all of them disagreed with the Brannock values
+ * this table used to carry:
+ *
+ *   women   uk = eu - 33   us = eu - 30     (IT 35 = UK 2 = US 5)
+ *   men     uk = eu - 34   us = eu - 33     (IT 39 = UK 5 = US 6)
+ *
+ * Brannock put men's IT 39 at UK 6 / US 7 — a full size out — and women's
+ * IT 35 at UK 2.5 / US 4.5. On a catalogue of Italian-labelled shoes that is
+ * the wrong answer on every product without a brand-specific table.
+ * See _scripts/guide-trascritte.json for the guides this was derived from.
+ *
+ * `eu` and `jpMm` are deliberately UNCHANGED. The brand guides do not agree
+ * with each other on centimetres — some publish mondopoint foot length, some
+ * publish insole length, and a few publish both in the same table — so there
+ * is no consensus to import. The Brannock mondopoint values at least stay
+ * consistent between the men's and women's tables.
+ *
+ * A brand that still deviates (Gucci men runs US = UK + 0.5, adidas runs on
+ * thirds of a EU size) is covered by its own table in
+ * {@link brand-official-tables.ts}, which lookupConversion prefers.
  */
 
 export interface MasterRow {
@@ -28,35 +44,38 @@ export interface MasterRow {
 }
 
 /**
- * Men's adult footwear. Covers EU 36–48 (US 4–16). Each EU step is paired
+ * Men's adult footwear. Covers EU 35–48 (US 2–15). Each EU step is paired
  * with one US step and 2–3mm of mondopoint length.
  */
 export const MEN_MASTER: MasterRow[] = [
-  { us: "4", eu: "36", uk: "3", jpMm: 225 },
-  { us: "4.5", eu: "36.5", uk: "3.5", jpMm: 228 },
-  { us: "5", eu: "37", uk: "4", jpMm: 230 },
-  { us: "5.5", eu: "37.5", uk: "4.5", jpMm: 233 },
-  { us: "6", eu: "38", uk: "5", jpMm: 235 },
-  { us: "6.5", eu: "38.5", uk: "5.5", jpMm: 238 },
-  { us: "7", eu: "39", uk: "6", jpMm: 240 },
-  { us: "7.5", eu: "39.5", uk: "6.5", jpMm: 243 },
-  { us: "8", eu: "40", uk: "7", jpMm: 245 },
-  { us: "8.5", eu: "40.5", uk: "7.5", jpMm: 248 },
-  { us: "9", eu: "41", uk: "8", jpMm: 250 },
-  { us: "9.5", eu: "41.5", uk: "8.5", jpMm: 253 },
-  { us: "10", eu: "42", uk: "9", jpMm: 255 },
-  { us: "10.5", eu: "42.5", uk: "9.5", jpMm: 258 },
-  { us: "11", eu: "43", uk: "10", jpMm: 260 },
-  { us: "11.5", eu: "43.5", uk: "10.5", jpMm: 263 },
-  { us: "12", eu: "44", uk: "11", jpMm: 265 },
-  { us: "12.5", eu: "44.5", uk: "11.5", jpMm: 268 },
-  { us: "13", eu: "45", uk: "12", jpMm: 270 },
-  { us: "13.5", eu: "45.5", uk: "12.5", jpMm: 273 },
-  { us: "14", eu: "46", uk: "13", jpMm: 275 },
-  { us: "14.5", eu: "46.5", uk: "13.5", jpMm: 278 },
-  { us: "15", eu: "47", uk: "14", jpMm: 280 },
-  { us: "15.5", eu: "47.5", uk: "14.5", jpMm: 283 },
-  { us: "16", eu: "48", uk: "15", jpMm: 285 },
+  // EU 35 exists only to cover the unisex scale `AM`, which starts a size
+  // below the men's one. Without it `AM` label "35" derives an empty matrix.
+  { us: "2", eu: "35", uk: "1", jpMm: 222 },
+  { us: "3", eu: "36", uk: "2", jpMm: 225 },
+  { us: "3.5", eu: "36.5", uk: "2.5", jpMm: 228 },
+  { us: "4", eu: "37", uk: "3", jpMm: 230 },
+  { us: "4.5", eu: "37.5", uk: "3.5", jpMm: 233 },
+  { us: "5", eu: "38", uk: "4", jpMm: 235 },
+  { us: "5.5", eu: "38.5", uk: "4.5", jpMm: 238 },
+  { us: "6", eu: "39", uk: "5", jpMm: 240 },
+  { us: "6.5", eu: "39.5", uk: "5.5", jpMm: 243 },
+  { us: "7", eu: "40", uk: "6", jpMm: 245 },
+  { us: "7.5", eu: "40.5", uk: "6.5", jpMm: 248 },
+  { us: "8", eu: "41", uk: "7", jpMm: 250 },
+  { us: "8.5", eu: "41.5", uk: "7.5", jpMm: 253 },
+  { us: "9", eu: "42", uk: "8", jpMm: 255 },
+  { us: "9.5", eu: "42.5", uk: "8.5", jpMm: 258 },
+  { us: "10", eu: "43", uk: "9", jpMm: 260 },
+  { us: "10.5", eu: "43.5", uk: "9.5", jpMm: 263 },
+  { us: "11", eu: "44", uk: "10", jpMm: 265 },
+  { us: "11.5", eu: "44.5", uk: "10.5", jpMm: 268 },
+  { us: "12", eu: "45", uk: "11", jpMm: 270 },
+  { us: "12.5", eu: "45.5", uk: "11.5", jpMm: 273 },
+  { us: "13", eu: "46", uk: "12", jpMm: 275 },
+  { us: "13.5", eu: "46.5", uk: "12.5", jpMm: 278 },
+  { us: "14", eu: "47", uk: "13", jpMm: 280 },
+  { us: "14.5", eu: "47.5", uk: "13.5", jpMm: 283 },
+  { us: "15", eu: "48", uk: "14", jpMm: 285 },
 ];
 
 /**
@@ -66,23 +85,23 @@ export const MEN_MASTER: MasterRow[] = [
  * for the same physical foot length).
  */
 export const WOMEN_MASTER: MasterRow[] = [
-  { us: "3.5", eu: "34", uk: "1.5", jpMm: 215 },
-  { us: "4", eu: "34.5", uk: "2", jpMm: 218 },
-  { us: "4.5", eu: "35", uk: "2.5", jpMm: 220 },
-  { us: "5", eu: "35.5", uk: "3", jpMm: 223 },
-  { us: "5.5", eu: "36", uk: "3.5", jpMm: 225 },
-  { us: "6", eu: "36.5", uk: "4", jpMm: 228 },
-  { us: "6.5", eu: "37", uk: "4.5", jpMm: 230 },
-  { us: "7", eu: "37.5", uk: "5", jpMm: 233 },
-  { us: "7.5", eu: "38", uk: "5.5", jpMm: 235 },
-  { us: "8", eu: "38.5", uk: "6", jpMm: 238 },
-  { us: "8.5", eu: "39", uk: "6.5", jpMm: 240 },
-  { us: "9", eu: "39.5", uk: "7", jpMm: 243 },
-  { us: "9.5", eu: "40", uk: "7.5", jpMm: 245 },
-  { us: "10", eu: "40.5", uk: "8", jpMm: 248 },
-  { us: "10.5", eu: "41", uk: "8.5", jpMm: 250 },
-  { us: "11", eu: "41.5", uk: "9", jpMm: 253 },
-  { us: "11.5", eu: "42", uk: "9.5", jpMm: 255 },
+  { us: "4", eu: "34", uk: "1", jpMm: 215 },
+  { us: "4.5", eu: "34.5", uk: "1.5", jpMm: 218 },
+  { us: "5", eu: "35", uk: "2", jpMm: 220 },
+  { us: "5.5", eu: "35.5", uk: "2.5", jpMm: 223 },
+  { us: "6", eu: "36", uk: "3", jpMm: 225 },
+  { us: "6.5", eu: "36.5", uk: "3.5", jpMm: 228 },
+  { us: "7", eu: "37", uk: "4", jpMm: 230 },
+  { us: "7.5", eu: "37.5", uk: "4.5", jpMm: 233 },
+  { us: "8", eu: "38", uk: "5", jpMm: 235 },
+  { us: "8.5", eu: "38.5", uk: "5.5", jpMm: 238 },
+  { us: "9", eu: "39", uk: "6", jpMm: 240 },
+  { us: "9.5", eu: "39.5", uk: "6.5", jpMm: 243 },
+  { us: "10", eu: "40", uk: "7", jpMm: 245 },
+  { us: "10.5", eu: "40.5", uk: "7.5", jpMm: 248 },
+  { us: "11", eu: "41", uk: "8", jpMm: 250 },
+  { us: "11.5", eu: "41.5", uk: "8.5", jpMm: 253 },
+  { us: "12", eu: "42", uk: "9", jpMm: 255 },
 ];
 
 /**

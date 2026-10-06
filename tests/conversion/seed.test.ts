@@ -213,7 +213,7 @@ describe("seed integrity — generic conversion tables", () => {
   });
 });
 
-describe("master tables — Brannock 1:1 mapping", () => {
+describe("master tables — Italian retail convention", () => {
   it("MEN_MASTER and WOMEN_MASTER are non-empty", () => {
     expect(MEN_MASTER.length).toBeGreaterThan(20);
     expect(WOMEN_MASTER.length).toBeGreaterThan(15);
@@ -239,19 +239,35 @@ describe("master tables — Brannock 1:1 mapping", () => {
     expect(new Set(uss).size).toBe(uss.length);
   });
 
-  it("MEN_MASTER row: EU 41 maps to US 9 (Brannock 1:1)", () => {
+  // The offsets below are the ones all 27 official brand guides agree on.
+  // Brannock would put men's EU 41 at US 9 and women's EU 38 at US 7.5.
+  it("MEN_MASTER row: EU 41 maps to UK 7 / US 8", () => {
     const row = MEN_MASTER.find((r) => r.eu === "41");
-    expect(row?.us).toBe("9");
+    expect(row?.uk).toBe("7");
+    expect(row?.us).toBe("8");
   });
 
-  it("MEN_MASTER row: EU 38 maps to US 6 (Brannock 1:1)", () => {
-    const row = MEN_MASTER.find((r) => r.eu === "38");
+  it("MEN_MASTER row: EU 39 maps to UK 5 / US 6", () => {
+    const row = MEN_MASTER.find((r) => r.eu === "39");
+    expect(row?.uk).toBe("5");
     expect(row?.us).toBe("6");
   });
 
-  it("WOMEN_MASTER row: EU 38 maps to US 7.5", () => {
-    const row = WOMEN_MASTER.find((r) => r.eu === "38");
-    expect(row?.us).toBe("7.5");
+  it("WOMEN_MASTER row: EU 35 maps to UK 2 / US 5", () => {
+    const row = WOMEN_MASTER.find((r) => r.eu === "35");
+    expect(row?.uk).toBe("2");
+    expect(row?.us).toBe("5");
+  });
+
+  it("keeps both offsets constant across the whole ladder", () => {
+    for (const r of MEN_MASTER) {
+      expect(Number(r.eu) - Number(r.uk)).toBe(34);
+      expect(Number(r.eu) - Number(r.us)).toBe(33);
+    }
+    for (const r of WOMEN_MASTER) {
+      expect(Number(r.eu) - Number(r.uk)).toBe(33);
+      expect(Number(r.eu) - Number(r.us)).toBe(30);
+    }
   });
 
   it("Mondopoint values are integers", () => {
@@ -261,26 +277,27 @@ describe("master tables — Brannock 1:1 mapping", () => {
 });
 
 describe("end-to-end: parse → lookup for representative scales", () => {
-  it("Scarpe Uomo IT (#G): `41` → US 9, EU 41, UK 8, JP-mm 250", () => {
+  it("Scarpe Uomo IT (#G): `41` → US 8, EU 41, UK 7, JP-mm 250", () => {
     const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === "G")!;
     const mapping = t.mappings.find((m) => m.sourceLabel === "41")!;
-    expect(mapping.us).toBe("9");
+    expect(mapping.us).toBe("8");
     expect(mapping.eu).toBe("41");
-    expect(mapping.uk).toBe("8");
+    expect(mapping.uk).toBe("7");
     expect(mapping.jpMm).toBe(250);
   });
 
-  it("Scarpe Donna IT (I): `38` → US 7.5 EU 38", () => {
+  it("Scarpe Donna IT (I): `38` → US 8 UK 5 EU 38", () => {
     const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === "I")!;
     const mapping = t.mappings.find((m) => m.sourceLabel === "38")!;
-    expect(mapping.us).toBe("7.5");
+    expect(mapping.us).toBe("8");
+    expect(mapping.uk).toBe("5");
     expect(mapping.eu).toBe("38");
   });
 
-  it("Scarpe Uomo USA (P): `10` → EU 42 UK 9", () => {
+  it("Scarpe Uomo USA (P): `10` → EU 43 UK 9", () => {
     const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === "P")!;
     const mapping = t.mappings.find((m) => m.sourceLabel === "10")!;
-    expect(mapping.eu).toBe("42");
+    expect(mapping.eu).toBe("43");
     expect(mapping.uk).toBe("9");
   });
 
@@ -288,14 +305,14 @@ describe("end-to-end: parse → lookup for representative scales", () => {
     const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === "SH")!;
     const mapping = t.mappings.find((m) => m.sourceLabel === "8/9.5")!;
     expect(mapping.us).toBe("8/9.5");
-    expect(mapping.eu).toBe("40");
+    expect(mapping.eu).toBe("41");
   });
 
   it("BQ (MW_COMBINED): `M8/W9.5` → us preserved as M/W token, eu derived from men US 8", () => {
     const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === "BQ")!;
     const mapping = t.mappings.find((m) => m.sourceLabel === "M8/W9.5")!;
     expect(mapping.us).toBe("M8/W9.5");
-    expect(mapping.eu).toBe("40");
+    expect(mapping.eu).toBe("41");
   });
 
   it("Scarpe uomo JP (SJ): `27` mondopoint has a mapping entry", () => {

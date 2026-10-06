@@ -167,7 +167,8 @@ describe("processProduct — per-variant happy path on scale G", () => {
     if (r.kind === "success") {
       expect(r.variantWrites).toHaveLength(1);
       expect(r.variantWrites[0]?.sourceLabel).toBe("41");
-      expect(r.variantWrites[0]?.matrix.us).toBe("9");
+      // Italian convention: IT 41 = US 8. Brannock would say 9.
+      expect(r.variantWrites[0]?.matrix.us).toBe("8");
       expect(r.variantWrites[0]?.matrix.eu).toBe("41");
     }
   });
@@ -386,7 +387,7 @@ describe("processProduct — vendor-aware brand lookup", () => {
     });
     expect(r.kind).toBe("success");
     if (r.kind === "success") {
-      expect(r.variantWrites[0]?.matrix.us).toBe("9");
+      expect(r.variantWrites[0]?.matrix.us).toBe("8");
     }
   });
 });
@@ -413,9 +414,10 @@ describe("processProduct — multi-variant happy path on different scale types",
     expect(r.kind).toBe("success");
     if (r.kind === "success") {
       expect(r.variantWrites[0]?.sourceLabel).toBe("8/9.5");
-      // SH's seed preserves the compound in `us`; EU/UK derived from men US 8.
+      // SH's seed preserves the compound in `us`; EU/UK derived from men US 8,
+      // which the Italian convention places at EU 41 (Brannock said 40).
       expect(r.variantWrites[0]?.matrix.us).toBe("8/9.5");
-      expect(r.variantWrites[0]?.matrix.eu).toBe("40");
+      expect(r.variantWrites[0]?.matrix.eu).toBe("41");
     }
   });
 
