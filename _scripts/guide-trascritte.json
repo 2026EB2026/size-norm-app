@@ -1902,7 +1902,9 @@
     "32"
    ]
   ],
-  "note": "ATTENZIONE: una sola colonna ma DUE ladder impilati. Le prime 4 righe sono donna (EU-UK 33, US-UK 3), dalla 38 in poi uomo (EU-UK 34, US-UK 1). La colonna UK NON e' monotona: UK 4 compare due volte (EU 37 donna e EU 38 uomo). Va spezzata per genere prima dell'import."
+  "note": "verificato su sito ufficiale il 2026-10-06: identica al sito. Il doppio ladder e' voluto: le righe marcate (W) sono la scala donna, il resto e' uomo. Non e' un errore, basta spezzare sulla marcatura (W) prima dell'import.",
+  "verificato": "premiata.it (Guida alle taglie)",
+  "scarto_variabile_atteso": true
  },
  {
   "brand": "Dr. Martens",
@@ -3130,7 +3132,8 @@
     "28"
    ]
   ],
-  "note": "SOSPETTA: US-UK = 2, mentre ogni altra maison del pacchetto ha 3 (EU 35 = UK 2 = US 5, qui US 4). La colonna US sembra spostata di un numero intero verso il basso. Da verificare sul sito prima dell'import."
+  "note": "SOSPETTA: US-UK = 2, mentre ogni altra maison del pacchetto ha 3 (EU 35 = UK 2 = US 5, qui US 4). La colonna US sembra spostata di un numero intero verso il basso. Da verificare sul sito prima dell'import.",
+  "verificato": "NON VERIFICABILE il 2026-10-06: jacquemus.com in manutenzione"
  },
  {
   "brand": "Jacquemus",
@@ -3187,7 +3190,8 @@
     "30"
    ]
   ],
-  "note": "NON IMPORTABILE: ladder irregolare. UK sale 1,1,0.5,1,0.5,1,0.5 e US 1,1,0.5,0.5,0.5,0.5,1; a EU 44 UK e US coincidono (9.5), cosa impossibile. Da rifare."
+  "note": "NON IMPORTABILE: ladder irregolare. UK sale 1,1,0.5,1,0.5,1,0.5 e US 1,1,0.5,0.5,0.5,0.5,1; a EU 44 UK e US coincidono (9.5), cosa impossibile. Da rifare.",
+  "verificato": "NON VERIFICABILE il 2026-10-06: jacquemus.com in manutenzione"
  },
  {
   "brand": "Moncler",
@@ -4022,82 +4026,55 @@
   "brand": "Kenzo",
   "gender": "women",
   "fonte": "Kenzo /Tabella taglie Kenzo e lunghezza piede.png",
-  "asse": "IT/EU",
+  "asse": "FR (etichetta Kenzo)",
   "rows": [
    [
-    "34",
-    "3",
-    "3",
-    "22.3"
-   ],
-   [
     "35",
-    "3.5",
-    "3.5",
-    "22.7"
+    "2.5",
+    "4",
+    null
    ],
    [
     "36",
-    "4.5",
-    "4.5",
-    "23.5"
+    "3.5",
+    "5",
+    null
    ],
    [
     "37",
+    "4",
     "5.5",
-    "5.5",
-    "24"
+    null
    ],
    [
     "38",
-    "6",
-    "6",
-    "24.7"
+    "5",
+    "6.5",
+    null
    ],
    [
     "39",
-    "7",
-    "7",
-    "25.4"
+    "6",
+    "7.5",
+    null
    ],
    [
     "40",
-    "7.5",
-    "7.5",
-    "26.1"
+    "6.5",
+    "8",
+    null
    ],
    [
     "41",
-    "8.5",
-    "8.5",
-    "26.7"
-   ],
-   [
-    "42",
-    "9.5",
-    "9.5",
-    "27.4"
-   ],
-   [
-    "43",
-    "10",
-    "10",
-    "28"
-   ],
-   [
-    "44",
-    "11",
-    "11",
-    "28.7"
-   ],
-   [
-    "45",
-    "11.5",
-    "11.5",
-    "29.4"
+    "7.5",
+    "9",
+    null
    ]
   ],
-  "note": "DUE PROBLEMI. 1) L'etichetta Kenzo e' la FR, non la IT: Kenzo 35 = IT 34, come Isabel Marant. 2) La colonna US e' una copia esatta della UK (3/3, 3.5/3.5, 4.5/4.5 ...), cosa impossibile: US inutilizzabile. Anche i gradini UK sono irregolari."
+  "note": "verificato su sito ufficiale il 2026-10-06: CORRETTA. L'immagine del pacchetto aveva la colonna US copiata dalla UK: era sbagliata. Il sito da' US diversa da UK (Kenzo 35 = UK 2.5 = US 4). Confermato anche che l'etichetta Kenzo e' la FR: Kenzo 35 = IT 34. Il ladder resta irregolare, ma e' quello pubblicato dal brand.",
+  "verificato": "kenzo.com/it-it/faq#eu_sizechart",
+  "colonne": "[Kenzo/FR, UK, US, cm] - la IT e' Kenzo-1 (Kenzo 35 = IT 34)",
+  "scarto_variabile_atteso": true
  },
  {
   "brand": "Etro",
@@ -4253,7 +4230,8 @@
     "29"
    ]
   ],
-  "note": "ETICHETTE SCAMBIATE: la riga marcata 'US' contiene in realta' le taglie EU (35-42) e l'intestazione in alto e' la taglia US (5-12). Una volta rietichettata il ladder e' quello donna standard."
+  "note": "verificato su sito ufficiale il 2026-10-06: il sito conferma US 5 = EU 35 = UK 2 = JP 22. L'immagine era solo impaginata male; i dati sono giusti e il ladder e' quello donna standard. Nessuna correzione necessaria.",
+  "verificato": "staud.clothing (SHOE SIZE GUIDE)"
  },
  {
   "brand": "MMK",
@@ -4815,7 +4793,8 @@
     "27.9"
    ]
   ],
-  "note": "NON IMPORTABILE. Da IT 39 in su un gradino IT intero vale mezzo gradino UK (39->40->41->42 contro UK 6->6.5->7->7.5), quindi lo scarto IT-UK scivola da 32.5 a 34.5; fra IT 43 e 44 la UK salta di 1.5. Inoltre le mezze taglie sono scritte '35-5' invece di '35.5'."
+  "note": "verificato su sito ufficiale il 2026-10-06: la tabella del sito e' IDENTICA all'immagine, '35-5' compreso. L'incongruenza non e' della trascrizione ma della guida pubblicata da JW Anderson: da IT 39 in su un gradino IT intero vale mezzo gradino UK, e fra IT 43 e 44 la UK salta di 1.5. Da decidere: importarla com'e' (coerente col sito del brand) o correggerla.",
+  "verificato": "jwanderson.com/it-it (pannello Size guide)"
  },
  {
   "brand": "Givenchy",
@@ -4954,5 +4933,68 @@
    ]
   ],
   "note": "DUPLICATO RISOLTO: file byte-identico sotto Givenchy e Jil sander. E' il widget generico uomo (scarto IT-UK 34, US-UK 1), valido per entrambi i brand; la colonna 'altezza della calzata 7.5 cm' e' un segnaposto, uguale su ogni riga."
+ },
+ {
+  "brand": "Rotate",
+  "gender": "women",
+  "fonte": "Rotate/Tabella conversione taglie internazionali.png",
+  "asse": "n/a",
+  "rows": [],
+  "verificato": "rotatebirgerchristensen.com (Size guide su pagina scarpa)",
+  "note": "verificato su sito ufficiale il 2026-10-06: CONFERMATO: anche sulla scheda di una scarpa, il pulsante 'Size guide' di Rotate apre solo la tabella abbigliamento (XXS-XXL). Il brand non pubblica una conversione calzature. Per Rotate va usato il ladder donna generico."
+ },
+ {
+  "brand": "Kenzo",
+  "gender": "men",
+  "fonte": "kenzo.com/it-it/faq#eu_sizechart (uomo)",
+  "verificato": "kenzo.com/it-it/faq#eu_sizechart",
+  "asse": "FR (etichetta Kenzo)",
+  "rows": [
+   [
+    "39",
+    "5.5",
+    "6",
+    null
+   ],
+   [
+    "40",
+    "6.5",
+    "7",
+    null
+   ],
+   [
+    "41",
+    "7.5",
+    "8",
+    null
+   ],
+   [
+    "42",
+    "8",
+    "8.5",
+    null
+   ],
+   [
+    "43",
+    "9",
+    "9.5",
+    null
+   ],
+   [
+    "44",
+    "9.5",
+    "10",
+    null
+   ],
+   [
+    "45",
+    "10.5",
+    "11",
+    null
+   ]
+  ],
+  "colonne": "[Kenzo/FR, UK, US, cm] - la IT e' Kenzo-1 (Kenzo 39 = IT 38)",
+  "note": "presa direttamente dal sito: nel pacchetto la tabella uomo non c'era.",
+  "scarto_variabile_atteso": true
  }
 ]
