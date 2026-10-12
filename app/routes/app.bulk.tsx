@@ -71,6 +71,10 @@ const triggerSchema = z.discriminatedUnion("intent", [
     intent: z.literal("reconvert-by-brand"),
     brand: z.string().trim().min(1, "Brand obbligatorio"),
   }),
+  z.object({
+    intent: z.literal("stop-job"),
+    jobId: z.string().trim().min(1, "Job obbligatorio"),
+  }),
 ]);
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -84,6 +88,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
   const data = parsed.data;
 
+  // Close out a job the merchant reports as stuck. A bulk run only ever
+  // reaches COMPLETED or FAILED because the Inngest function writes that row
+  // itself — so when the function dies mid-run (a deploy going down under it,
+  // a lost retry) nothing is left to move the row off RUNNING, and the guard
+  // below then refuses every new job forever. This is the way out.
+  if (data.intent === "stop-job") {
+    await prisma.bulkJob.updateMany({
+      // shopDomain in the filter, not just the id: a job id from another
+      // shop must not be stoppable from here.
+      where: {
+        id: data.jobId,
+        shopDomain: session.shop,
+        status: { in: ["PENDING", "RUNNING"] },
+      },
+      data: {
+        status: "FAILED",
+        finishedAt: new Date(),
+        errorMessage: "Interrotto manualmente dal merchant",
+      },
+    });
+    return redirect("/app/bulk");
+  }
+
   // Refuse to start a new job if one is already running for this shop.
   const running = await prisma.bulkJob.count({
     where: { shopDomain: session.shop, status: { in: ["PENDING", "RUNNING"] } },
@@ -92,7 +119,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return {
       errors: {
         _form: [
-          "Esiste già un job in esecuzione. Attendi che finisca prima di avviarne un altro.",
+          "Esiste già un job in esecuzione. Attendi che finisca prima di avviarne un altro — o, se è bloccato, fermalo dal banner in cima alla pagina.",
         ],
       },
     };
@@ -175,6 +202,7 @@ export default function BulkAdmin() {
   const startingFull = useSubmitting("full-rescan");
   const startingScale = useSubmitting("reconvert-by-scale");
   const startingBrand = useSubmitting("reconvert-by-brand");
+  const stoppingJob = useSubmitting("stop-job");
 
   return (
     <s-page heading="Bulk re-scan">
@@ -193,6 +221,17 @@ export default function BulkAdmin() {
               — aggiorna la pagina per lo stato più recente.
             </s-text>
           </s-stack>
+          <s-paragraph>
+            Partito il{" "}
+            {new Date(runningJob.startedAt).toLocaleString("it-IT")}.
+          </s-paragraph>
+          <Form method="post">
+            <input type="hidden" name="intent" value="stop-job" />
+            <input type="hidden" name="jobId" value={runningJob.id} />
+            <s-button type="submit" variant="secondary" loading={stoppingJob}>
+              Ferma il job
+            </s-button>
+          </Form>
         </s-banner>
       )}
 
