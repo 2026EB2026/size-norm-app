@@ -219,6 +219,21 @@ export function processProduct(input: ProcessorInput): ProcessingResult {
     return { kind: "skip", reason: "not_footwear" };
   }
 
+  // 1a. No size option at all. These arrive from the ERP as a single
+  // "Default Title" variant — the import never gave them a size axis, which
+  // in practice means the goods were never delivered. There is nothing to
+  // convert, so they are skipped rather than flagged: an alert on a product
+  // the app cannot fix is noise, and it buries the ones a merchant can act
+  // on. The Diagnose page still explains the missing option on request.
+  const hasSizeOption = product.variants.some(
+    (v) => findSizeOption(v, sizeOptionNames) !== null,
+  );
+  // An empty variant list can't happen in Shopify, so it is left to the
+  // gates below rather than swallowed here.
+  if (product.variants.length > 0 && !hasSizeOption) {
+    return { kind: "skip", reason: "no_size_option" };
+  }
+
   // 1b. ERP scale tag. Past the footwear gate, a `SCALATAGLIE_` tag we can't
   // resolve is a hard stop rather than something to guess around: falling
   // through to the vendor+gender auto-derive is exactly how a US-labelled

@@ -3134,8 +3134,8 @@
     "28"
    ]
   ],
-  "note": "SOSPETTA: US-UK = 2, mentre ogni altra maison del pacchetto ha 3 (EU 35 = UK 2 = US 5, qui US 4). La colonna US sembra spostata di un numero intero verso il basso. Da verificare sul sito prima dell'import.",
-  "verificato": "NON VERIFICABILE il 2026-10-06: jacquemus.com in manutenzione"
+  "note": "verificata sul sito ufficiale, identica all'immagine: EU 35 = UK 2 = US 4. Lo scarto US-UK = 2 non e' un errore, e' la convenzione 'US donna = UK+2' che Jacquemus pubblica davvero (la stessa di Aeyde). Le maison italiane usano +3.",
+  "verificato": "jacquemus.com/it_it/guida-alle-taglie (12/10/2026)"
  },
  {
   "brand": "Jacquemus",
@@ -3192,8 +3192,8 @@
     "30"
    ]
   ],
-  "note": "NON IMPORTABILE: ladder irregolare. UK sale 1,1,0.5,1,0.5,1,0.5 e US 1,1,0.5,0.5,0.5,0.5,1; a EU 44 UK e US coincidono (9.5), cosa impossibile. Da rifare.",
-  "verificato": "NON VERIFICABILE il 2026-10-06: jacquemus.com in manutenzione"
+  "note": "verificata sul sito ufficiale: il ladder irregolare e' PUBBLICATO DAL BRAND, non un errore di trascrizione. A EU 44 Jacquemus da' UK 9,5 e US 9,5, cioe' lo stesso numero su due sistemi diversi, e i gradini alternano 1 e 0.5. Non importata: in attesa di decidere se riprodurre la guida del brand com'e' o lasciare questi prodotti al master italiano.",
+  "verificato": "jacquemus.com/it_it/guida-alle-taglie (12/10/2026)"
  },
  {
   "brand": "Moncler",

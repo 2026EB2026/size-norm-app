@@ -227,10 +227,39 @@ describe("processProduct — variant-level alerts", () => {
     }
   });
 
-  it("emits LABEL_NOT_RECOGNIZED when variant has no size option", () => {
+  it("skips a product whose variants carry no size option at all", () => {
+    // These come out of the ERP with a single "Default Title" variant — the
+    // import never gave them a size axis, which in practice means the goods
+    // were never delivered. Nothing to convert, and an alert the merchant
+    // can't act on would only bury the ones they can.
     const r = processProduct(
       input({
         variants: [
+          {
+            id: "gid://shopify/ProductVariant/201",
+            title: "Default Title",
+            selectedOptions: [{ name: "Title", value: "Default Title" }],
+          },
+        ],
+      }),
+    );
+    expect(r.kind).toBe("skip");
+    if (r.kind === "skip") {
+      expect(r.reason).toBe("no_size_option");
+    }
+  });
+
+  it("still alerts on a single unsized variant among sized ones", () => {
+    // The skip above is for products with NO size axis. A product that has
+    // one must still report the odd variant that fell through it.
+    const r = processProduct(
+      input({
+        variants: [
+          {
+            id: "gid://shopify/ProductVariant/200",
+            title: "41",
+            selectedOptions: [{ name: "Size", value: "41" }],
+          },
           {
             id: "gid://shopify/ProductVariant/201",
             title: "Color: Red",
@@ -242,6 +271,11 @@ describe("processProduct — variant-level alerts", () => {
     expect(r.kind).toBe("draft");
     if (r.kind === "draft") {
       expect(r.variantAlerts[0]?.errorCode).toBe("LABEL_NOT_RECOGNIZED");
+      expect(r.variantAlerts[0]?.variantId).toBe(
+        "gid://shopify/ProductVariant/201",
+      );
+      // The sized variant still resolves — partial success is kept.
+      expect(r.variantWrites).toHaveLength(1);
     }
   });
 

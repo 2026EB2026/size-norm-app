@@ -52,7 +52,7 @@ const metafieldDefsEnsuredInProcess = new Set<string>();
  * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
  * scales seed or its CM-overrides companion file.
  */
-const BRAND_SEED_REVISION = "v8-master-italiano";
+const BRAND_SEED_REVISION = "v9-marant-kenzo-jacquemus";
 const brandScalesSeededInProcess = new Set<string>();
 
 /**

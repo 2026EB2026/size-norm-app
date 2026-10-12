@@ -1273,125 +1273,48 @@ export const GUIDE_UFFICIALI_TABLES: readonly ConversionTable[] = [
     ],
   },
   {
-    // Marant /donna.png — women
+    // Jacquemus/donna.png — women
     scaleSigla: "I",
-    brand: "Isabel Marant",
+    brand: "Jacquemus",
     isSeed: true,
     mappings: [
-      { sourceLabel: "34", us: "5", eu: "34", uk: "2", cm: "22.5", jpMm: 225 },
-      { sourceLabel: "35", us: "6", eu: "35", uk: "3", cm: "23", jpMm: 230 },
-      { sourceLabel: "36", us: "7", eu: "36", uk: "4", cm: "23.5", jpMm: 235 },
-      { sourceLabel: "37", us: "8", eu: "37", uk: "5", cm: "24", jpMm: 240 },
-      { sourceLabel: "38", us: "9", eu: "38", uk: "6", cm: "25", jpMm: 250 },
-      { sourceLabel: "39", us: "10", eu: "39", uk: "7", cm: "25.5", jpMm: 255 },
-      { sourceLabel: "40", us: "11", eu: "40", uk: "8", cm: "26", jpMm: 260 },
-      { sourceLabel: "41", us: "12", eu: "41", uk: "9", cm: "27", jpMm: 270 },
+      { sourceLabel: "35", us: "4", eu: "35", uk: "2", cm: "22", jpMm: 220 },
+      { sourceLabel: "36", us: "5", eu: "36", uk: "3", cm: "23", jpMm: 230 },
+      { sourceLabel: "37", us: "6", eu: "37", uk: "4", cm: "24", jpMm: 240 },
+      { sourceLabel: "38", us: "7", eu: "38", uk: "5", cm: "25", jpMm: 250 },
+      { sourceLabel: "39", us: "8", eu: "39", uk: "6", cm: "26", jpMm: 260 },
+      { sourceLabel: "40", us: "9", eu: "40", uk: "7", cm: "27", jpMm: 270 },
+      { sourceLabel: "41", us: "10", eu: "41", uk: "8", cm: "28", jpMm: 280 },
     ],
   },
   {
-    // Marant /donna.png — women
+    // Jacquemus/donna.png — women
     scaleSigla: "AD",
-    brand: "Isabel Marant",
+    brand: "Jacquemus",
     isSeed: true,
     mappings: [
-      { sourceLabel: "2", us: "5", eu: "34", uk: "2", cm: "22.5", jpMm: 225 },
-      { sourceLabel: "3", us: "6", eu: "35", uk: "3", cm: "23", jpMm: 230 },
-      { sourceLabel: "4", us: "7", eu: "36", uk: "4", cm: "23.5", jpMm: 235 },
-      { sourceLabel: "5", us: "8", eu: "37", uk: "5", cm: "24", jpMm: 240 },
-      { sourceLabel: "6", us: "9", eu: "38", uk: "6", cm: "25", jpMm: 250 },
-      { sourceLabel: "7", us: "10", eu: "39", uk: "7", cm: "25.5", jpMm: 255 },
-      { sourceLabel: "8", us: "11", eu: "40", uk: "8", cm: "26", jpMm: 260 },
+      { sourceLabel: "2", us: "4", eu: "35", uk: "2", cm: "22", jpMm: 220 },
+      { sourceLabel: "3", us: "5", eu: "36", uk: "3", cm: "23", jpMm: 230 },
+      { sourceLabel: "4", us: "6", eu: "37", uk: "4", cm: "24", jpMm: 240 },
+      { sourceLabel: "5", us: "7", eu: "38", uk: "5", cm: "25", jpMm: 250 },
+      { sourceLabel: "6", us: "8", eu: "39", uk: "6", cm: "26", jpMm: 260 },
+      { sourceLabel: "7", us: "9", eu: "40", uk: "7", cm: "27", jpMm: 270 },
+      { sourceLabel: "8", us: "10", eu: "41", uk: "8", cm: "28", jpMm: 280 },
     ],
   },
   {
-    // Marant /donna.png — women
+    // Jacquemus/donna.png — women
     scaleSigla: "R",
-    brand: "Isabel Marant",
+    brand: "Jacquemus",
     isSeed: true,
     mappings: [
-      { sourceLabel: "5", us: "5", eu: "34", uk: "2", cm: "22.5", jpMm: 225 },
-      { sourceLabel: "6", us: "6", eu: "35", uk: "3", cm: "23", jpMm: 230 },
-      { sourceLabel: "7", us: "7", eu: "36", uk: "4", cm: "23.5", jpMm: 235 },
-      { sourceLabel: "8", us: "8", eu: "37", uk: "5", cm: "24", jpMm: 240 },
-      { sourceLabel: "9", us: "9", eu: "38", uk: "6", cm: "25", jpMm: 250 },
-      { sourceLabel: "10", us: "10", eu: "39", uk: "7", cm: "25.5", jpMm: 255 },
-      { sourceLabel: "11", us: "11", eu: "40", uk: "8", cm: "26", jpMm: 260 },
-    ],
-  },
-  {
-    // Marant /donna.png — women
-    scaleSigla: "DC",
-    brand: "Isabel Marant",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "35", us: "5", eu: "35", uk: "2", cm: "22.5", jpMm: 225 },
-      { sourceLabel: "36", us: "6", eu: "36", uk: "3", cm: "23", jpMm: 230 },
-      { sourceLabel: "37", us: "7", eu: "37", uk: "4", cm: "23.5", jpMm: 235 },
-      { sourceLabel: "38", us: "8", eu: "38", uk: "5", cm: "24", jpMm: 240 },
-      { sourceLabel: "39", us: "9", eu: "39", uk: "6", cm: "25", jpMm: 250 },
-      { sourceLabel: "40", us: "10", eu: "40", uk: "7", cm: "25.5", jpMm: 255 },
-      { sourceLabel: "41", us: "11", eu: "41", uk: "8", cm: "26", jpMm: 260 },
-      { sourceLabel: "42", us: "12", eu: "42", uk: "9", cm: "27", jpMm: 270 },
-    ],
-  },
-  {
-    // Marant /uomo.png — men
-    scaleSigla: "G",
-    brand: "Isabel Marant",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "38", us: "6", eu: "38", uk: "5", cm: "24.5", jpMm: 245 },
-      { sourceLabel: "39", us: "7", eu: "39", uk: "6", cm: "25", jpMm: 250 },
-      { sourceLabel: "40", us: "8", eu: "40", uk: "7", cm: "26", jpMm: 260 },
-      { sourceLabel: "41", us: "9", eu: "41", uk: "8", cm: "26.5", jpMm: 265 },
-      { sourceLabel: "42", us: "10", eu: "42", uk: "9", cm: "27.5", jpMm: 275 },
-      { sourceLabel: "43", us: "11", eu: "43", uk: "10", cm: "28", jpMm: 280 },
-      { sourceLabel: "44", us: "12", eu: "44", uk: "11", cm: "29", jpMm: 290 },
-    ],
-  },
-  {
-    // Marant /uomo.png — men
-    scaleSigla: "M",
-    brand: "Isabel Marant",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "5", us: "6", eu: "38", uk: "5", cm: "24.5", jpMm: 245 },
-      { sourceLabel: "6", us: "7", eu: "39", uk: "6", cm: "25", jpMm: 250 },
-      { sourceLabel: "7", us: "8", eu: "40", uk: "7", cm: "26", jpMm: 260 },
-      { sourceLabel: "8", us: "9", eu: "41", uk: "8", cm: "26.5", jpMm: 265 },
-      { sourceLabel: "9", us: "10", eu: "42", uk: "9", cm: "27.5", jpMm: 275 },
-      { sourceLabel: "10", us: "11", eu: "43", uk: "10", cm: "28", jpMm: 280 },
-      { sourceLabel: "11", us: "12", eu: "44", uk: "11", cm: "29", jpMm: 290 },
-    ],
-  },
-  {
-    // Marant /uomo.png — men
-    scaleSigla: "P",
-    brand: "Isabel Marant",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "6", us: "6", eu: "38", uk: "5", cm: "24.5", jpMm: 245 },
-      { sourceLabel: "7", us: "7", eu: "39", uk: "6", cm: "25", jpMm: 250 },
-      { sourceLabel: "8", us: "8", eu: "40", uk: "7", cm: "26", jpMm: 260 },
-      { sourceLabel: "9", us: "9", eu: "41", uk: "8", cm: "26.5", jpMm: 265 },
-      { sourceLabel: "10", us: "10", eu: "42", uk: "9", cm: "27.5", jpMm: 275 },
-      { sourceLabel: "11", us: "11", eu: "43", uk: "10", cm: "28", jpMm: 280 },
-      { sourceLabel: "12", us: "12", eu: "44", uk: "11", cm: "29", jpMm: 290 },
-    ],
-  },
-  {
-    // Marant /uomo.png — men
-    scaleSigla: "DB",
-    brand: "Isabel Marant",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "39", us: "6", eu: "39", uk: "5", cm: "24.5", jpMm: 245 },
-      { sourceLabel: "40", us: "7", eu: "40", uk: "6", cm: "25", jpMm: 250 },
-      { sourceLabel: "41", us: "8", eu: "41", uk: "7", cm: "26", jpMm: 260 },
-      { sourceLabel: "42", us: "9", eu: "42", uk: "8", cm: "26.5", jpMm: 265 },
-      { sourceLabel: "43", us: "10", eu: "43", uk: "9", cm: "27.5", jpMm: 275 },
-      { sourceLabel: "44", us: "11", eu: "44", uk: "10", cm: "28", jpMm: 280 },
-      { sourceLabel: "45", us: "12", eu: "45", uk: "11", cm: "29", jpMm: 290 },
+      { sourceLabel: "4", us: "4", eu: "35", uk: "2", cm: "22", jpMm: 220 },
+      { sourceLabel: "5", us: "5", eu: "36", uk: "3", cm: "23", jpMm: 230 },
+      { sourceLabel: "6", us: "6", eu: "37", uk: "4", cm: "24", jpMm: 240 },
+      { sourceLabel: "7", us: "7", eu: "38", uk: "5", cm: "25", jpMm: 250 },
+      { sourceLabel: "8", us: "8", eu: "39", uk: "6", cm: "26", jpMm: 260 },
+      { sourceLabel: "9", us: "9", eu: "40", uk: "7", cm: "27", jpMm: 270 },
+      { sourceLabel: "10", us: "10", eu: "41", uk: "8", cm: "28", jpMm: 280 },
     ],
   },
   {
@@ -1993,66 +1916,6 @@ export const GUIDE_UFFICIALI_TABLES: readonly ConversionTable[] = [
     ],
   },
   {
-    // Kenzo /Tabella taglie Kenzo e lunghezza piede.png — women
-    scaleSigla: "I",
-    brand: "Kenzo",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "34", us: "4", eu: "34", uk: "2½", cm: null, jpMm: null },
-      { sourceLabel: "35", us: "5", eu: "35", uk: "3½", cm: null, jpMm: null },
-      { sourceLabel: "36", us: "5½", eu: "36", uk: "4", cm: null, jpMm: null },
-      { sourceLabel: "37", us: "6½", eu: "37", uk: "5", cm: null, jpMm: null },
-      { sourceLabel: "38", us: "7½", eu: "38", uk: "6", cm: null, jpMm: null },
-      { sourceLabel: "39", us: "8", eu: "39", uk: "6½", cm: null, jpMm: null },
-      { sourceLabel: "40", us: "9", eu: "40", uk: "7½", cm: null, jpMm: null },
-    ],
-  },
-  {
-    // Kenzo /Tabella taglie Kenzo e lunghezza piede.png — women
-    scaleSigla: "AD",
-    brand: "Kenzo",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "2½", us: "4", eu: "34", uk: "2½", cm: null, jpMm: null },
-      { sourceLabel: "3½", us: "5", eu: "35", uk: "3½", cm: null, jpMm: null },
-      { sourceLabel: "4", us: "5½", eu: "36", uk: "4", cm: null, jpMm: null },
-      { sourceLabel: "5", us: "6½", eu: "37", uk: "5", cm: null, jpMm: null },
-      { sourceLabel: "6", us: "7½", eu: "38", uk: "6", cm: null, jpMm: null },
-      { sourceLabel: "6½", us: "8", eu: "39", uk: "6½", cm: null, jpMm: null },
-      { sourceLabel: "7½", us: "9", eu: "40", uk: "7½", cm: null, jpMm: null },
-    ],
-  },
-  {
-    // Kenzo /Tabella taglie Kenzo e lunghezza piede.png — women
-    scaleSigla: "R",
-    brand: "Kenzo",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "4", us: "4", eu: "34", uk: "2½", cm: null, jpMm: null },
-      { sourceLabel: "5", us: "5", eu: "35", uk: "3½", cm: null, jpMm: null },
-      { sourceLabel: "5½", us: "5½", eu: "36", uk: "4", cm: null, jpMm: null },
-      { sourceLabel: "6½", us: "6½", eu: "37", uk: "5", cm: null, jpMm: null },
-      { sourceLabel: "7½", us: "7½", eu: "38", uk: "6", cm: null, jpMm: null },
-      { sourceLabel: "8", us: "8", eu: "39", uk: "6½", cm: null, jpMm: null },
-      { sourceLabel: "9", us: "9", eu: "40", uk: "7½", cm: null, jpMm: null },
-    ],
-  },
-  {
-    // Kenzo /Tabella taglie Kenzo e lunghezza piede.png — women
-    scaleSigla: "DC",
-    brand: "Kenzo",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "35", us: "4", eu: "35", uk: "2½", cm: null, jpMm: null },
-      { sourceLabel: "36", us: "5", eu: "36", uk: "3½", cm: null, jpMm: null },
-      { sourceLabel: "37", us: "5½", eu: "37", uk: "4", cm: null, jpMm: null },
-      { sourceLabel: "38", us: "6½", eu: "38", uk: "5", cm: null, jpMm: null },
-      { sourceLabel: "39", us: "7½", eu: "39", uk: "6", cm: null, jpMm: null },
-      { sourceLabel: "40", us: "8", eu: "40", uk: "6½", cm: null, jpMm: null },
-      { sourceLabel: "41", us: "9", eu: "41", uk: "7½", cm: null, jpMm: null },
-    ],
-  },
-  {
     // Etro/Immagine ChatGPT 29 set 2026, 16_42_42.png — women
     scaleSigla: "I",
     brand: "ETRO",
@@ -2300,66 +2163,6 @@ export const GUIDE_UFFICIALI_TABLES: readonly ConversionTable[] = [
       { sourceLabel: "10", us: "10", eu: "43", uk: "9", cm: "28", jpMm: 280 },
       { sourceLabel: "11", us: "11", eu: "44", uk: "10", cm: "28.6", jpMm: 286 },
       { sourceLabel: "12", us: "12", eu: "45", uk: "11", cm: "29.3", jpMm: 293 },
-    ],
-  },
-  {
-    // kenzo.com/it-it/faq#eu_sizechart (uomo) — men
-    scaleSigla: "G",
-    brand: "Kenzo",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "38", us: "6", eu: "38", uk: "5½", cm: null, jpMm: null },
-      { sourceLabel: "39", us: "7", eu: "39", uk: "6½", cm: null, jpMm: null },
-      { sourceLabel: "40", us: "8", eu: "40", uk: "7½", cm: null, jpMm: null },
-      { sourceLabel: "41", us: "8½", eu: "41", uk: "8", cm: null, jpMm: null },
-      { sourceLabel: "42", us: "9½", eu: "42", uk: "9", cm: null, jpMm: null },
-      { sourceLabel: "43", us: "10", eu: "43", uk: "9½", cm: null, jpMm: null },
-      { sourceLabel: "44", us: "11", eu: "44", uk: "10½", cm: null, jpMm: null },
-    ],
-  },
-  {
-    // kenzo.com/it-it/faq#eu_sizechart (uomo) — men
-    scaleSigla: "M",
-    brand: "Kenzo",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "5½", us: "6", eu: "38", uk: "5½", cm: null, jpMm: null },
-      { sourceLabel: "6½", us: "7", eu: "39", uk: "6½", cm: null, jpMm: null },
-      { sourceLabel: "7½", us: "8", eu: "40", uk: "7½", cm: null, jpMm: null },
-      { sourceLabel: "8", us: "8½", eu: "41", uk: "8", cm: null, jpMm: null },
-      { sourceLabel: "9", us: "9½", eu: "42", uk: "9", cm: null, jpMm: null },
-      { sourceLabel: "9½", us: "10", eu: "43", uk: "9½", cm: null, jpMm: null },
-      { sourceLabel: "10½", us: "11", eu: "44", uk: "10½", cm: null, jpMm: null },
-    ],
-  },
-  {
-    // kenzo.com/it-it/faq#eu_sizechart (uomo) — men
-    scaleSigla: "P",
-    brand: "Kenzo",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "6", us: "6", eu: "38", uk: "5½", cm: null, jpMm: null },
-      { sourceLabel: "7", us: "7", eu: "39", uk: "6½", cm: null, jpMm: null },
-      { sourceLabel: "8", us: "8", eu: "40", uk: "7½", cm: null, jpMm: null },
-      { sourceLabel: "8½", us: "8½", eu: "41", uk: "8", cm: null, jpMm: null },
-      { sourceLabel: "9½", us: "9½", eu: "42", uk: "9", cm: null, jpMm: null },
-      { sourceLabel: "10", us: "10", eu: "43", uk: "9½", cm: null, jpMm: null },
-      { sourceLabel: "11", us: "11", eu: "44", uk: "10½", cm: null, jpMm: null },
-    ],
-  },
-  {
-    // kenzo.com/it-it/faq#eu_sizechart (uomo) — men
-    scaleSigla: "DB",
-    brand: "Kenzo",
-    isSeed: true,
-    mappings: [
-      { sourceLabel: "39", us: "6", eu: "39", uk: "5½", cm: null, jpMm: null },
-      { sourceLabel: "40", us: "7", eu: "40", uk: "6½", cm: null, jpMm: null },
-      { sourceLabel: "41", us: "8", eu: "41", uk: "7½", cm: null, jpMm: null },
-      { sourceLabel: "42", us: "8½", eu: "42", uk: "8", cm: null, jpMm: null },
-      { sourceLabel: "43", us: "9½", eu: "43", uk: "9", cm: null, jpMm: null },
-      { sourceLabel: "44", us: "10", eu: "44", uk: "9½", cm: null, jpMm: null },
-      { sourceLabel: "45", us: "11", eu: "45", uk: "10½", cm: null, jpMm: null },
     ],
   },
 ];

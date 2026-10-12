@@ -37,7 +37,13 @@ SCALES_FR = {"women": ("DC", 0), "men": ("DB", 0)}
 
 # Brand escluse a mano, con la ragione.
 ESCLUSE = {
-    "Jacquemus": "US-UK = 2 invece di 3; jacquemus.com in manutenzione, non verificabile",
+    # Confermato dal merchant il 12/10/2026: l'ERP carica questi due brand
+    # con la taglia IT gia' convertita (tag SCALATAGLIE_Scarpe Donna/Uomo IT).
+    # Le loro guide sono costruite sull'etichetta francese, quindi non si
+    # appoggiano piu' su quelle etichette: un prodotto marcato IT va letto
+    # col master italiano, come ogni altro brand sulla stessa scala.
+    "Isabel Marant": "etichetta gia' convertita in IT dall'ERP: usa il master italiano",
+    "Kenzo": "etichetta gia' convertita in IT dall'ERP: usa il master italiano",
 }
 
 VENDOR = {

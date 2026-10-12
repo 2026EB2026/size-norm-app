@@ -41,16 +41,16 @@ describe("GUIDE_UFFICIALI_TABLES", () => {
     }
   });
 
-  it("treats the Isabel Marant label as FR, not IT", () => {
-    // Marant 39 = IT 38. Reading the brand's own label as an Italian size
-    // would shift every Marant product by a full size.
-    const it = GUIDE_UFFICIALI_TABLES.find(
-      (t) => t.brand === "Isabel Marant" && t.scaleSigla === "I",
+  it("leaves Isabel Marant and Kenzo to the Italian master", () => {
+    // Both guides are keyed on the brand's French label, but the ERP loads
+    // these two already converted to IT (confirmed by the merchant on
+    // 12/10/2026). A chart built on FR labels no longer lines up with IT
+    // ones, so these brands fall back to the generic table like any other
+    // Italian-labelled product rather than being shifted a size.
+    const shifted = GUIDE_UFFICIALI_TABLES.filter(
+      (t) => t.brand === "Isabel Marant" || t.brand === "Kenzo",
     );
-    expect(it).toBeDefined();
-    const row = it?.mappings.find((m) => m.uk === "2");
-    expect(row?.sourceLabel).toBe("34");
-    expect(row?.eu).toBe("34");
+    expect(shifted).toHaveLength(0);
   });
 
   it("uses the Italian men's convention, not Brannock", () => {
