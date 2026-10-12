@@ -377,6 +377,29 @@ export async function ensureSeed(
         for (const table of BRAND_OFFICIAL_TABLES_V1) {
           await upsertBrandOfficialTable(tx as typeof prisma, shopDomain, table);
         }
+        // Drop official charts we no longer ship. Upserting alone is not
+        // enough: a table removed from the seed would otherwise sit in the
+        // DB forever and keep winning over the generic one, because
+        // lookupConversion prefers any brand-specific match. That is how
+        // Isabel Marant kept resolving a size out after its chart was
+        // withdrawn.
+        //
+        // Only seed rows are pruned. A table the merchant has validated
+        // (isSeed=false) is theirs and survives, even if we stop shipping
+        // our version of it.
+        const shipped = new Set(
+          BRAND_OFFICIAL_TABLES_V1.map((t) => `${t.scaleSigla} ${t.brand}`),
+        );
+        const existingOfficial = await tx.conversionTable.findMany({
+          where: { shopDomain, brand: { not: null }, isSeed: true },
+          select: { id: true, scaleSigla: true, brand: true },
+        });
+        const stale = existingOfficial
+          .filter((t) => !shipped.has(`${t.scaleSigla} ${t.brand}`))
+          .map((t) => t.id);
+        if (stale.length > 0) {
+          await tx.conversionTable.deleteMany({ where: { id: { in: stale } } });
+        }
       });
       brandScalesSeededInProcess.add(cacheKey);
     } catch (e) {
