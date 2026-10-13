@@ -64,3 +64,33 @@ describe("GUIDE_UFFICIALI_TABLES", () => {
     expect(row?.us).toBe("6");
   });
 });
+
+describe("source-verified guides", () => {
+  it("imports Moschino, whose published ladder the checker had rejected", () => {
+    // moschino.com publishes IT 43 = UK 9.5, skipping 42.5 — verified at the
+    // source on 2026-10-13, so the table is imported as published instead of
+    // being thrown out over the brand's own irregularity.
+    const t = GUIDE_UFFICIALI_TABLES.find(
+      (x) => x.brand === "Moschino" && x.scaleSigla === "I",
+    );
+    expect(t).toBeDefined();
+    expect(t?.mappings.find((m) => m.sourceLabel === "42")?.uk).toBe("9");
+    // The IT 43 row drops out here for an unrelated reason: the Atelier scale
+    // `I` stops at 42, so no product can ever carry that label.
+    expect(t?.mappings.find((m) => m.sourceLabel === "43")).toBeUndefined();
+  });
+
+  it("keeps Bonpoint on the kid EU scales", () => {
+    const siglas = GUIDE_UFFICIALI_TABLES.filter(
+      (t) => t.brand === "Bonpoint",
+    ).map((t) => t.scaleSigla);
+    expect(siglas.length).toBeGreaterThan(0);
+    for (const s of siglas) expect(["#BK", "#BL"]).toContain(s);
+  });
+
+  it("leaves Crocs out: its second column is a US kid code, not a UK size", () => {
+    expect(
+      GUIDE_UFFICIALI_TABLES.filter((t) => t.brand === "Crocs"),
+    ).toHaveLength(0);
+  });
+});

@@ -804,7 +804,9 @@
     "29.5"
    ]
   ],
-  "note": "ultima colonna IT 43 = UK 9.5: salto IT intero ma mezzo gradino UK, scarto 33.5 invece di 33"
+  "note": "verificata sul sito: IDENTICA all'immagine. La riga IT 43 = UK 9,5 = US 12,5 e' pubblicata cosi' da Moschino, che salta la 42,5 e da' alla 43 mezzo gradino. Importata com'e'.",
+  "verificato": "moschino.com (guida alle taglie su scheda prodotto), 13/10/2026",
+  "verificato_fonte": true
  },
  {
   "brand": "N 21",
@@ -2143,7 +2145,9 @@
     "27.6"
    ]
   ],
-  "note": "prime due righe incoerenti: IT 35 = UK 1.5 e IT 35.5 = UK 2.5, un gradino UK intero per mezzo gradino IT. Dalla 36 in poi scarto regolare IT-UK 33."
+  "note": "verificata sul sito: IDENTICA all'immagine, comprese le prime due righe irregolari (IT 35 = UK 1,5 e IT 35,5 = UK 2,5). E' la guida del brand. Importata com'e'.",
+  "verificato": "thejude.com (guida alle taglie su scheda prodotto), 13/10/2026",
+  "verificato_fonte": true
  },
  {
   "brand": "Gucci",
@@ -4327,7 +4331,8 @@
     null
    ]
   ],
-  "note": "la guida tiene EU e IT come due colonne DIVERSE, che divergono fino a 1.5 numeri (EU 43.5 = IT 42). Entrambe le scale hanno gradini mancanti (EU salta 37.5, 39.5, 42, 43; UK salta 4.5, 6.5, 9). Qui ho tenuto la colonna IT. Nessun centimetro."
+  "note": "NON SERVE: i prodotti Michael by Michael Kors arrivano dall'ERP taggati SCALATAGLIE_Scarpe Donna USA, con taglie 5 1/2, 6, 6 1/2... La colonna EU/IT di questa guida, che era quella incoerente, non viene mai letta. Nota: il vendor e' 'Michael by Michael Kors', non 'Michael Kors'.",
+  "verificato": "n/a — non serve"
  },
  {
   "brand": "Bonpoint",
@@ -4486,8 +4491,10 @@
     "25.6"
    ]
   ],
-  "note": "il salto UK a EU 32 (13.5 poi 1.5) e' corretto: e' il passaggio dalla numerazione bambino a quella adulto. Anomalie: US 3.5 compare su due righe (EU 18 e 19) e i gradini UK sono irregolari (da 7 si passa a 8 saltando 7.5).",
-  "scarto_variabile_atteso": true
+  "note": "verificata sul sito: IDENTICA all'immagine, inclusa la US 3,5 ripetuta su EU 18 e 19 e il salto UK da 7 a 8. Il cambio di numerazione a EU 32 e' il passaggio bambino-adulto. Importata com'e'.",
+  "scarto_variabile_atteso": true,
+  "verificato": "bonpoint.com/it-it (guida alle taglie su scheda prodotto), 13/10/2026",
+  "verificato_fonte": true
  },
  {
   "brand": "Aeyede",

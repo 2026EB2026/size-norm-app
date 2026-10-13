@@ -31,6 +31,9 @@ SCALES = {
     "women":  [("I", 0), ("AD", 1), ("R", 2)],
     "men":    [("G", 0), ("M", 1), ("P", 2)],
     "unisex": [("AM", 0), ("AF", 1), ("AG", 2)],
+    # Le scale bambino dell'ERP sono EU: una guida bambino si aggancia
+    # sulla colonna base, non su UK/US.
+    "kid":    [("#BK", 0), ("#BL", 0)],
 }
 # Scale FR, usate solo per i brand che etichettano in FR.
 SCALES_FR = {"women": ("DC", 0), "men": ("DB", 0)}
@@ -43,6 +46,10 @@ ESCLUSE = {
     # appoggiano piu' su quelle etichette: un prodotto marcato IT va letto
     # col master italiano, come ogni altro brand sulla stessa scala.
     "Isabel Marant": "etichetta gia' convertita in IT dall'ERP: usa il master italiano",
+    # La tabella Crocs non ha la forma [base, UK, US, cm] delle altre: la sua
+    # seconda colonna e' il codice US bambino (C2/3, J1...), non una taglia UK.
+    # Agganciarla come le altre metterebbe "C5" nella colonna UK.
+    "Crocs": "colonne non confrontabili (codice US C/J al posto della UK)",
     "Kenzo": "etichetta gia' convertita in IT dall'ERP: usa il master italiano",
 }
 
@@ -57,6 +64,7 @@ VENDOR = {
     "Crocs": "Crocs", "Dr. Martens": "Dr. Martens", "Marni": "Marni",
     "Alexander Wang": "Alexander Wang", "Jacquemus": "Jacquemus",
     "Veja": "Veja", "Kenzo": "Kenzo",
+    "Moschino": "Moschino", "Jude": "Jude", "Bonpoint": "Bonpoint",
     "Givenchy / Jil Sander": ["Givenchy", "Jil Sander"],
     "__generico uomo IT": None, "Rotate": None, "Hunter": None,
 }
@@ -89,6 +97,14 @@ for g in guides:
     vendors = vendor if isinstance(vendor, list) else ([vendor] if vendor else [])
     vendors = vendors + VENDOR_EXTRA.get(brand, [])
     problems = check(g)
+    # Una guida controllata sul sito del produttore entra com'e' pubblicata,
+    # anche se il ladder non e' regolare. Il controllo automatico serve a
+    # scovare trascrizioni sbagliate: una volta confrontata con la fonte quel
+    # dubbio e' chiuso, e riprodurre la tabella del brand e' piu' fedele che
+    # sostituirla con quella generica. Su dieci guide sospette, otto sono
+    # risultate fedeli: l'incoerenza era del brand.
+    if problems and g.get("verificato_fonte"):
+        problems = []
     if not g["rows"] or not vendors or problems:
         skipped.append((brand, g["gender"],
                         "ladder non pulito" if problems else "nessun vendor noto"))
