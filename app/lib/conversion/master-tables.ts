@@ -51,6 +51,7 @@ export const MEN_MASTER: MasterRow[] = [
   // EU 35 exists only to cover the unisex scale `AM`, which starts a size
   // below the men's one. Without it `AM` label "35" derives an empty matrix.
   { us: "2", eu: "35", uk: "1", jpMm: 222 },
+  { us: "2.5", eu: "35.5", uk: "1.5", jpMm: 224 },
   { us: "3", eu: "36", uk: "2", jpMm: 225 },
   { us: "3.5", eu: "36.5", uk: "2.5", jpMm: 228 },
   { us: "4", eu: "37", uk: "3", jpMm: 230 },
@@ -76,6 +77,16 @@ export const MEN_MASTER: MasterRow[] = [
   { us: "14", eu: "47", uk: "13", jpMm: 280 },
   { us: "14.5", eu: "47.5", uk: "13.5", jpMm: 283 },
   { us: "15", eu: "48", uk: "14", jpMm: 285 },
+  // The tail below exists for two scales that run past EU 48: `AQ` (Scarpe
+  // Uomo TF), whose last labels are US 15½ and 16, and `SJ` (Scarpe uomo JP),
+  // whose last labels are 29, 29.5 and 30 cm. Without these rows those
+  // labels derive an empty matrix.
+  { us: "15.5", eu: "48.5", uk: "14.5", jpMm: 288 },
+  { us: "16", eu: "49", uk: "15", jpMm: 290 },
+  { us: "16.5", eu: "49.5", uk: "15.5", jpMm: 293 },
+  { us: "17", eu: "50", uk: "16", jpMm: 295 },
+  { us: "17.5", eu: "50.5", uk: "16.5", jpMm: 298 },
+  { us: "18", eu: "51", uk: "17", jpMm: 300 },
 ];
 
 /**
@@ -105,6 +116,8 @@ export const WOMEN_MASTER: MasterRow[] = [
   { us: "11", eu: "41", uk: "8", jpMm: 250 },
   { us: "11.5", eu: "41.5", uk: "8.5", jpMm: 253 },
   { us: "12", eu: "42", uk: "9", jpMm: 255 },
+  // Covers `DC` (Scarpe Donna FR), whose last label is 42½.
+  { us: "12.5", eu: "42.5", uk: "9.5", jpMm: 258 },
 ];
 
 /**

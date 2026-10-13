@@ -52,7 +52,7 @@ const metafieldDefsEnsuredInProcess = new Set<string>();
  * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
  * scales seed or its CM-overrides companion file.
  */
-const BRAND_SEED_REVISION = "v13-tory-burch";
+const BRAND_SEED_REVISION = "v14-code-scala";
 const brandScalesSeededInProcess = new Set<string>();
 
 /**

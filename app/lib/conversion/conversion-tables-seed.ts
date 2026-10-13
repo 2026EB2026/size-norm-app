@@ -22,10 +22,14 @@ import type {
  * masters store `6.5`.
  *
  * The glyph part was missing, and it was not a cosmetic gap: `findRowByColumn`
- * compares strings, so `6½` matched nothing and EVERY half size on a
- * US-keyed scale (`AG`, `R`, `P`) got an empty matrix. Whole sizes resolved
+ * compares strings, so `6½` matched nothing and EVERY half size across the
+ * sixteen scales that have one got an empty matrix. Whole sizes resolved
  * normally, which is why it went unseen — a Converse unisex sneaker showed a
  * full conversion on 7 and 8 and a blank one on 6½ and 8½.
+ *
+ * It does NOT strip the `K` that `#BM` and `#BN` put on every label. Those
+ * two are skipped deliberately further down: `K1` is ambiguous in US kid
+ * sizing, where 1 means both a toddler 1 (EU 16) and a youth 1Y (EU 31).
  */
 function normalizeScaleLabel(label: string): string {
   let out = label.replace(",", ".");
