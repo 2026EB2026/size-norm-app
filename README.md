@@ -67,3 +67,21 @@ Production hosting on Vercel. Required environment variables:
 - `SCOPES` — must match `shopify.app.toml`
 - `DATABASE_URL` — Neon Postgres pooler endpoint
 - `NODE_ENV=production`
+
+### Migrations
+
+Migrations are **not** applied by the build. Run them yourself when a
+migration is pending:
+
+```sh
+pnpm migrate:deploy
+```
+
+They used to run inside `pnpm build`, which tied every deployment to the
+database being awake at that moment. `prisma migrate deploy` takes a Postgres
+advisory lock before it does anything, and gives up after ten seconds — so a
+suspended Neon compute, or two Vercel builds running at once, failed the
+deploy with `P1002` even when there was nothing to migrate.
+
+Deploys no longer touch the database. The trade is that a new migration is now
+an explicit step: ship it before the code that depends on it.
