@@ -2665,7 +2665,7 @@
     "23.5"
    ],
    [
-    "35H",
+    "35.5",
     "2.75",
     "4.75",
     "23.8"
@@ -2677,7 +2677,7 @@
     "24.2"
    ],
    [
-    "36H",
+    "36.5",
     "3.5",
     "5.5",
     "24.5"
@@ -2689,7 +2689,7 @@
     "24.8"
    ],
    [
-    "37H",
+    "37.5",
     "4.5",
     "6.5",
     "25.2"
@@ -2701,7 +2701,7 @@
     "25.5"
    ],
    [
-    "38H",
+    "38.5",
     "5",
     "7",
     "25.8"
@@ -2713,7 +2713,7 @@
     "26.2"
    ],
    [
-    "39H",
+    "39.5",
     "6",
     "8",
     "26.5"
@@ -2725,7 +2725,7 @@
     "26.8"
    ],
    [
-    "40H",
+    "40.5",
     "6.75",
     "8.75",
     "27.2"
@@ -2737,7 +2737,8 @@
     "27.4"
    ]
   ],
-  "note": "NON IMPORTABILE COSI': le colonne UK e US contengono quarti di taglia inesistenti (2.75, 4.75, 6.75) e il ladder non e' regolare. Da rifare. Nota: la H nel nome taglia ('35H') e' il mezzo punto."
+  "note": "NON IMPORTABILE COSI': le colonne UK e US contengono quarti di taglia inesistenti (2.75, 4.75, 6.75) e il ladder non e' regolare. Da rifare. Nota: la H nel nome taglia ('35H') e' il mezzo punto. La 'H' del nome taglia (35H) e' il mezzo punto ed e' stata convertita in 35.5, altrimenti quelle righe non si agganciavano alla scala.",
+  "anomalia_accettata": "I quarti di taglia (UK 2,75 / 4,75 / 6,75) NON sono arrotondabili: la UK pubblicata va da 2,5 a 7 su 13 righe, quindi il brand comprime il passo. Arrotondare al mezzo punto crea duplicati (2,75 -> 2,5 o 3 collide con la riga accanto). Importata come pubblicata: meglio riprodurre il numero del brand che inventarne uno o lasciare il prodotto alla tabella generica, che su queste righe si discosta di un numero pieno."
  },
  {
   "brand": "MSGM",
@@ -3577,144 +3578,6 @@
   "note": "nessuna colonna centimetri. Ladder regolare uomo (EU-UK 34, US-UK 1)."
  },
  {
-  "brand": "Lemaire",
-  "gender": "?",
-  "fonte": "lemaire/Immagine ChatGPT 29 set 2026, 17_22_24.png",
-  "asse": "FR",
-  "rows": [
-   [
-    "36",
-    "3",
-    "5.5",
-    "23"
-   ],
-   [
-    "37",
-    "4",
-    "6.5",
-    "23.5"
-   ],
-   [
-    "38",
-    "5",
-    "7.5",
-    "24"
-   ],
-   [
-    "39",
-    "6",
-    "8.5",
-    "25"
-   ],
-   [
-    "40",
-    "6.5",
-    "9.5",
-    "25.5"
-   ],
-   [
-    "41",
-    "7.5",
-    "10.5",
-    "26.5"
-   ],
-   [
-    "42",
-    "8",
-    "11.5",
-    "27"
-   ],
-   [
-    "43",
-    "9",
-    "12.5",
-    "28"
-   ],
-   [
-    "44",
-    "9.5",
-    "13.5",
-    "28.5"
-   ],
-   [
-    "45",
-    "10.5",
-    "14.5",
-    "29.5"
-   ]
-  ],
-  "note": "IRREGOLARE: lo scarto EU-UK scivola da 33 (FR 36) a 34.5 (FR 45) senza motivo dichiarato; anche KR e JP alternano gradini da 5 e 10, da 0.5 e 1."
- },
- {
-  "brand": "Lemaire",
-  "gender": "?",
-  "fonte": "lemaire/Immagine ChatGPT 29 set 2026, 17_24_49.png",
-  "asse": "FR",
-  "rows": [
-   [
-    "36",
-    "3",
-    "5.5",
-    "23"
-   ],
-   [
-    "37",
-    "4",
-    "6.5",
-    "23.5"
-   ],
-   [
-    "38",
-    "5",
-    "7.5",
-    "24"
-   ],
-   [
-    "39",
-    "5.5",
-    "6.5",
-    "25.4"
-   ],
-   [
-    "40",
-    "6.5",
-    "7.5",
-    "25.7"
-   ],
-   [
-    "41",
-    "7.5",
-    "8.5",
-    "26.5"
-   ],
-   [
-    "42",
-    "8",
-    "9.5",
-    "27"
-   ],
-   [
-    "43",
-    "9",
-    "10.5",
-    "28"
-   ],
-   [
-    "44",
-    "9.5",
-    "11.5",
-    "28.5"
-   ],
-   [
-    "45",
-    "10.5",
-    "12.5",
-    "29.5"
-   ]
-  ],
-  "note": "CONTRADDICE l'altro file Lemaire dalla riga FR 39 in poi (US 6.5 contro 8.5, cm 25.4 contro 25). Qui la colonna US NON e' monotona: 5.5, 6.5, 7.5, poi torna a 6.5 a FR 39 — sembra la tabella donna fino a 38 e quella uomo da 39, incollate. Serve l'originale, separato per genere."
- },
- {
   "brand": "Stella McCartney",
   "gender": "women",
   "fonte": "Stella Mc Cartney/Immagine ChatGPT 1 ott 2026, 12_11_27.png",
@@ -4497,7 +4360,7 @@
   "verificato_fonte": true
  },
  {
-  "brand": "Aeyede",
+  "brand": "Aeyde",
   "gender": "women",
   "fonte": "Aeyede/Guida alle taglie delle scarpe.png",
   "asse": "EU",
@@ -4585,15 +4448,9 @@
     "9",
     "11",
     "27"
-   ],
-   [
-    "43",
-    "9.5",
-    "11.5",
-    "29.4"
    ]
   ],
-  "note": "US-UK = 2 (convenzione 'US donna = UK+2'), diversa dal +3 usato dalle maison italiane del pacchetto. Anomalia: i cm salgono di ~0.3 per gradino ma balzano da 27.0 a 29.4 fra EU 42 e 43."
+  "note": "US-UK = 2 e' la convenzione 'US donna = UK+2' che il brand pubblica davvero, confermata dal fatto che Jacquemus fa lo stesso (verificato sul loro sito). Tolta la riga EU 43, l'unica irregolare e l'unica con i centimetri fuori scala (29,4 dove il passo e' ~0,3): fuori dalla scala Atelier `I`, che si ferma a 42, quindi non sarebbe comunque mai stata usata."
  },
  {
   "brand": "Alexander Wang",
@@ -4819,7 +4676,7 @@
     "23.5"
    ],
    [
-    "35H",
+    "35.5",
     "2.75",
     "4.75",
     "23.8"
@@ -4831,7 +4688,7 @@
     "24.2"
    ],
    [
-    "36H",
+    "36.5",
     "3.5",
     "5.5",
     "24.5"
@@ -4843,7 +4700,7 @@
     "24.8"
    ],
    [
-    "37H",
+    "37.5",
     "4.5",
     "6.5",
     "25.2"
@@ -4855,7 +4712,7 @@
     "25.5"
    ],
    [
-    "38H",
+    "38.5",
     "5",
     "7",
     "25.8"
@@ -4867,7 +4724,7 @@
     "26.2"
    ],
    [
-    "39H",
+    "39.5",
     "6",
     "8",
     "26.5"
@@ -4879,7 +4736,7 @@
     "26.8"
    ],
    [
-    "40H",
+    "40.5",
     "6.75",
     "8.75",
     "27.2"
@@ -4891,7 +4748,8 @@
     "27.4"
    ]
   ],
-  "note": "stessa anomalia di Dsquared2: quarti di taglia UK/US (2.75, 4.75, 6.75). Comparendo identica su due brand e' una convenzione del widget di origine, non un errore di trascrizione — ma resta da arrotondare al mezzo punto prima di finire in tabella. La 'H' e' il mezzo numero."
+  "note": "stessa anomalia di Dsquared2: quarti di taglia UK/US (2.75, 4.75, 6.75). Comparendo identica su due brand e' una convenzione del widget di origine, non un errore di trascrizione — ma resta da arrotondare al mezzo punto prima di finire in tabella. La 'H' e' il mezzo numero. La 'H' del nome taglia (35H) e' il mezzo punto ed e' stata convertita in 35.5, altrimenti quelle righe non si agganciavano alla scala.",
+  "anomalia_accettata": "I quarti di taglia (UK 2,75 / 4,75 / 6,75) NON sono arrotondabili: la UK pubblicata va da 2,5 a 7 su 13 righe, quindi il brand comprime il passo. Arrotondare al mezzo punto crea duplicati (2,75 -> 2,5 o 3 collide con la riga accanto). Importata come pubblicata: meglio riprodurre il numero del brand che inventarne uno o lasciare il prodotto alla tabella generica, che su queste righe si discosta di un numero pieno."
  },
  {
   "brand": "Givenchy / Jil Sander",
@@ -5007,5 +4865,52 @@
   "note": "presa direttamente dal sito: nel pacchetto la tabella uomo non c'era.",
   "scarto_variabile_atteso": true,
   "base_e_fr": true
+ },
+ {
+  "brand": "Lemaire",
+  "gender": "women",
+  "fonte": "lemaire.fr (scheda prodotto donna)",
+  "verificato": "lemaire.fr — pannello Size Guide, 13/10/2026",
+  "verificato_fonte": true,
+  "asse": "FR/IT/EU (coincidono)",
+  "rows": [
+   [
+    "36",
+    "3",
+    "5.5",
+    "23"
+   ],
+   [
+    "37",
+    "4",
+    "6.5",
+    "23.7"
+   ],
+   [
+    "38",
+    "5",
+    "7.5",
+    "24.4"
+   ],
+   [
+    "39",
+    "6",
+    "8.5",
+    "25.4"
+   ],
+   [
+    "40",
+    "6.5",
+    "9",
+    "25.7"
+   ],
+   [
+    "41",
+    "7",
+    "9.5",
+    "26"
+   ]
+  ],
+  "note": "presa dal sito, una taglia alla volta dal pannello equivalenze. Smentisce ENTRAMBI i file del pacchetto, che davano FR 41 = UK 7,5 con US 10,5 e 8,5: il brand dice UK 7 / US 9,5. Per Lemaire IT = EU = FR, nessuno scarto. Lo scarto IT-UK scivola da 33 a 34 sulle ultime due righe: e' cosi' sul sito. Solo donna: per l'uomo serve il link di un prodotto uomo."
  }
 ]

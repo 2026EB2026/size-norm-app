@@ -94,3 +94,26 @@ describe("source-verified guides", () => {
     ).toHaveLength(0);
   });
 });
+
+describe("quarter sizes", () => {
+  it("renders Dsquared2's quarters with the same glyph family as its halves", () => {
+    // Givenchy and Dsquared2 publish UK 2¾ / 4¾ / 6¾. Rounding them to the
+    // nearest half would collide with the row next door, so they are kept —
+    // but a column mixing "2½" and "2.75" reads like a bug on the PDP.
+    const t = GUIDE_UFFICIALI_TABLES.find(
+      (x) => x.brand === "Dsquared2" && x.scaleSigla === "I",
+    );
+    expect(t?.mappings.find((m) => m.sourceLabel === "38")?.uk).toBe("4¾");
+    expect(t?.mappings.find((m) => m.sourceLabel === "35")?.uk).toBe("2½");
+  });
+
+  it("keeps every published row, halves included", () => {
+    // The brand writes its half sizes as "35H"; read literally those rows
+    // match no scale label and silently vanished.
+    const t = GUIDE_UFFICIALI_TABLES.find(
+      (x) => x.brand === "Dsquared2" && x.scaleSigla === "I",
+    );
+    expect(t?.mappings).toHaveLength(13);
+    expect(t?.mappings.find((m) => m.sourceLabel === "35½")).toBeDefined();
+  });
+});

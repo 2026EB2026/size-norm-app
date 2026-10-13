@@ -18,11 +18,18 @@ def num(v):
     try: return float(str(v).replace(',', '.'))
     except ValueError: return None
 
+# Glifi che format-label.ts gia' conosce, cosi' una colonna non mescola
+# "2½" e "2.75".
+FRAZIONI = {0.25: "¼", 0.5: "½", 0.75: "¾"}
+
 def lab(x):
     """Formatta un numero con la convenzione Atelier: 34.5 -> '34½'."""
     if x is None: return None
     if abs(x - round(x)) < 1e-9: return str(int(round(x)))
-    if abs(x - int(x) - 0.5) < 1e-9: return "%d½" % int(x)
+    intero = int(x)
+    for frazione, glifo in FRAZIONI.items():
+        if abs(x - intero - frazione) < 1e-9:
+            return "%d%s" % (intero, glifo)
     return ("%g" % x)
 
 # Scala Atelier per genere: (sigla, indice colonna della guida)
@@ -65,6 +72,7 @@ VENDOR = {
     "Alexander Wang": "Alexander Wang", "Jacquemus": "Jacquemus",
     "Veja": "Veja", "Kenzo": "Kenzo",
     "Moschino": "Moschino", "Jude": "Jude", "Bonpoint": "Bonpoint",
+    "Lemaire": "Lemaire", "Aeyde": "Aeyde", "Dsquared2": "Dsquared2",
     "Givenchy / Jil Sander": ["Givenchy", "Jil Sander"],
     "__generico uomo IT": None, "Rotate": None, "Hunter": None,
 }
@@ -103,7 +111,7 @@ for g in guides:
     # dubbio e' chiuso, e riprodurre la tabella del brand e' piu' fedele che
     # sostituirla con quella generica. Su dieci guide sospette, otto sono
     # risultate fedeli: l'incoerenza era del brand.
-    if problems and g.get("verificato_fonte"):
+    if problems and (g.get("verificato_fonte") or g.get("anomalia_accettata")):
         problems = []
     if not g["rows"] or not vendors or problems:
         skipped.append((brand, g["gender"],
