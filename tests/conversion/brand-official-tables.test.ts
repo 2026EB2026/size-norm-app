@@ -77,10 +77,13 @@ describe("adidas official chart on SUA", () => {
     expect(convert("5", "adidas originals")?.fromBrandSpecific).toBe(true);
   });
 
-  it("fills the half sizes the in-house table leaves empty", () => {
+  it("resolves half sizes on both the generic and the official table", () => {
+    // This used to assert the generic matrix was NULL on half sizes, which
+    // was a bug being mistaken for a property: the seed compared "6½" against
+    // a master storing "6.5" and matched nothing. Both resolve now.
     for (const label of ["3½", "4½", "5½", "6½"]) {
       const generic = convert(label, "Some Other Brand");
-      expect(generic?.matrix.eu, `generic ${label}`).toBeNull();
+      expect(generic?.matrix.eu, `generic ${label}`).toBeTruthy();
 
       const official = convert(label, "Adidas Originals");
       expect(official?.fromBrandSpecific).toBe(true);
@@ -88,6 +91,18 @@ describe("adidas official chart on SUA", () => {
       expect(official?.matrix.us).toBeTruthy();
       expect(official?.matrix.cm).toBeTruthy();
     }
+  });
+
+  it("still differs from the generic where adidas sizes differently", () => {
+    // The reason the official chart exists: adidas runs on thirds of a EU
+    // size, so UK 4 is EU 36⅔ for them and a whole EU 37 in-house. Only the
+    // official table carries centimetres.
+    const official = convert("4", "Adidas Originals");
+    const generic = convert("4", "Some Other Brand");
+    expect(official?.matrix.eu).toBe("36⅔");
+    expect(generic?.matrix.eu).not.toBe("36⅔");
+    expect(official?.matrix.cm).toBeTruthy();
+    expect(generic?.matrix.cm).toBeNull();
   });
 
   it("keeps the published ladder monotonic", () => {

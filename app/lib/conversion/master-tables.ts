@@ -85,6 +85,9 @@ export const MEN_MASTER: MasterRow[] = [
  * for the same physical foot length).
  */
 export const WOMEN_MASTER: MasterRow[] = [
+  // US 3.5 exists only to cover the `R` scale (Scarpe Donna USA), whose
+  // first label is 3½. Without it that label derives an empty matrix.
+  { us: "3.5", eu: "33.5", uk: "0.5", jpMm: 212 },
   { us: "4", eu: "34", uk: "1", jpMm: 215 },
   { us: "4.5", eu: "34.5", uk: "1.5", jpMm: 218 },
   { us: "5", eu: "35", uk: "2", jpMm: 220 },

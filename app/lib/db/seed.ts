@@ -52,7 +52,7 @@ const metafieldDefsEnsuredInProcess = new Set<string>();
  * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
  * scales seed or its CM-overrides companion file.
  */
-const BRAND_SEED_REVISION = "v11-lemaire-aeyde-givenchy-dsquared2";
+const BRAND_SEED_REVISION = "v12-mezze-taglie-us";
 const brandScalesSeededInProcess = new Set<string>();
 
 /**

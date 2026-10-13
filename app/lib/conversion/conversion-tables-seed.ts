@@ -5,6 +5,7 @@ import {
   findRowByColumn,
   type MasterRow,
 } from "./master-tables";
+import { FRACTION_GLYPHS } from "./parse-label";
 import { ATELIER_SCALES_V1 } from "./scales-seed";
 import type {
   ConversionMapping,
@@ -14,11 +15,24 @@ import type {
 } from "./types";
 
 /**
- * Strips the `,` decimal separator used by Italian kid scales (`#BK`, `#BL`)
- * so the value matches the dot-form in {@link KID_MASTER}.
+ * Rewrites a scale label into the form the master tables use.
+ *
+ * Two things differ. The Italian kid scales (`#BK`, `#BL`) write a comma
+ * decimal, and every adult scale writes halves as a glyph — `6½` — while the
+ * masters store `6.5`.
+ *
+ * The glyph part was missing, and it was not a cosmetic gap: `findRowByColumn`
+ * compares strings, so `6½` matched nothing and EVERY half size on a
+ * US-keyed scale (`AG`, `R`, `P`) got an empty matrix. Whole sizes resolved
+ * normally, which is why it went unseen — a Converse unisex sneaker showed a
+ * full conversion on 7 and 8 and a blank one on 6½ and 8½.
  */
-function normalizeCommaDecimal(label: string): string {
-  return label.replace(",", ".");
+function normalizeScaleLabel(label: string): string {
+  let out = label.replace(",", ".");
+  for (const [glyph, decimal] of Object.entries(FRACTION_GLYPHS)) {
+    out = out.split(glyph).join(decimal);
+  }
+  return out;
 }
 
 /**
@@ -105,7 +119,7 @@ function menPartOfMWCombined(label: string): string | null {
  * This helper converts a cm label to mm for lookup.
  */
 function jpCmLabelToMm(label: string): number | null {
-  const normalized = normalizeCommaDecimal(label);
+  const normalized = normalizeScaleLabel(label);
   const value = Number.parseFloat(normalized);
   if (!Number.isFinite(value)) return null;
   return Math.round(value * 10);
@@ -132,7 +146,7 @@ function lookupMasterForLabel(
     return findRowByColumn(pickMaster(scale), "jpMm", mm);
   }
 
-  const normalizedLabel = normalizeCommaDecimal(label);
+  const normalizedLabel = normalizeScaleLabel(label);
   const primary = pickMaster(scale);
   const hit = findRowByColumn(primary, colKey, normalizedLabel);
   if (hit !== null) return hit;

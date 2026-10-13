@@ -1,7 +1,7 @@
 import type { NormalizedLabel, SizeScale } from "./types";
 
 /** Unicode fractional glyphs we recognize. Mapped to decimal-string suffixes. */
-const FRACTION_GLYPHS: Record<string, string> = {
+export const FRACTION_GLYPHS: Record<string, string> = {
   "½": ".5",
   "⅓": ".333",
   "⅔": ".667",

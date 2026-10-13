@@ -324,3 +324,21 @@ describe("end-to-end: parse → lookup for representative scales", () => {
     expect(mapping).toBeDefined();
   });
 });
+
+describe("half sizes on US-keyed scales", () => {
+  it("resolves ½ labels against the masters' decimal values", () => {
+    // `findRowByColumn` compares strings, so a scale label of "6½" never
+    // matched a master row of "6.5" and every half size on AG / R / P came
+    // out blank. Whole sizes worked, which hid it: a Converse unisex sneaker
+    // showed a full conversion on 7 and 8 and nothing on 6½ and 8½.
+    for (const sigla of ["AG", "R", "P"]) {
+      const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === sigla);
+      const half = t?.mappings.filter((m) => m.sourceLabel.includes("½")) ?? [];
+      expect(half.length, `${sigla} has half-size rows`).toBeGreaterThan(0);
+      for (const m of half) {
+        expect(m.eu, `${sigla} ${m.sourceLabel}`).toBeTruthy();
+        expect(m.uk, `${sigla} ${m.sourceLabel}`).toBeTruthy();
+      }
+    }
+  });
+});
