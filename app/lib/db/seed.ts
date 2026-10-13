@@ -52,7 +52,7 @@ const metafieldDefsEnsuredInProcess = new Set<string>();
  * BRAND_SEED_REVISION whenever you ship breaking changes to the brand
  * scales seed or its CM-overrides companion file.
  */
-const BRAND_SEED_REVISION = "v15-bambino-wrap";
+const BRAND_SEED_REVISION = "v16-crocs-bambino";
 const brandScalesSeededInProcess = new Set<string>();
 
 /**

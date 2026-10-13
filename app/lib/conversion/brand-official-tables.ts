@@ -106,6 +106,37 @@ const HAND_WRITTEN: readonly ConversionTable[] = [
       { sourceLabel: "050", us: null, eu: "38", uk: "5", cm: "24", jpMm: 240 },
     ],
   },
+  {
+    // Source: crocsitalia.it/it/size-guide/bambino, read 2026-10-13.
+    //
+    // `us` repeats the C/J code because that code is the US kid size; Crocs
+    // publishes no UK column, so `uk` stays null rather than being guessed.
+    // `eu` carries the guide's "Taglia italiana suggerita", kept verbatim —
+    // four of those rows are a range ("31/32") and collapsing them to one
+    // number would be inventing a precision Crocs doesn't claim.
+    scaleSigla: "#CR",
+    brand: "Crocs",
+    isSeed: true,
+    mappings: [
+      { sourceLabel: "C2/3", us: "C2/3", eu: "19/21", uk: null, cm: "10.7", jpMm: 107 },
+      { sourceLabel: "C4", us: "C4", eu: "21", uk: null, cm: "11.5", jpMm: 115 },
+      { sourceLabel: "C5", us: "C5", eu: "22", uk: null, cm: "12.3", jpMm: 123 },
+      { sourceLabel: "C6", us: "C6", eu: "23", uk: null, cm: "13.2", jpMm: 132 },
+      { sourceLabel: "C7", us: "C7", eu: "24", uk: null, cm: "14", jpMm: 140 },
+      { sourceLabel: "C8", us: "C8", eu: "25", uk: null, cm: "14.9", jpMm: 149 },
+      { sourceLabel: "C9", us: "C9", eu: "26", uk: null, cm: "15.7", jpMm: 157 },
+      { sourceLabel: "C10", us: "C10", eu: "27", uk: null, cm: "16.6", jpMm: 166 },
+      { sourceLabel: "C11", us: "C11", eu: "28", uk: null, cm: "17.4", jpMm: 174 },
+      { sourceLabel: "C12", us: "C12", eu: "29", uk: null, cm: "18.3", jpMm: 183 },
+      { sourceLabel: "C13", us: "C13", eu: "30", uk: null, cm: "19.1", jpMm: 191 },
+      { sourceLabel: "J1", us: "J1", eu: "31/32", uk: null, cm: "20", jpMm: 200 },
+      { sourceLabel: "J2", us: "J2", eu: "33/34", uk: null, cm: "20.8", jpMm: 208 },
+      { sourceLabel: "J3", us: "J3", eu: "35/36", uk: null, cm: "21.7", jpMm: 217 },
+      { sourceLabel: "J4", us: "J4", eu: "37", uk: null, cm: "22.5", jpMm: 225 },
+      { sourceLabel: "J5", us: "J5", eu: "38", uk: null, cm: "23.3", jpMm: 233 },
+      { sourceLabel: "J6", us: "J6", eu: "39", uk: null, cm: "24.2", jpMm: 242 },
+    ],
+  },
 ];
 
 /**

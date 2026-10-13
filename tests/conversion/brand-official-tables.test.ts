@@ -173,3 +173,32 @@ describe("Dr. Martens kids on #CE", () => {
     expect(convert("030")?.matrix.us).toBe("4");
   });
 });
+
+describe("Crocs kid scale (#CR)", () => {
+  it("covers every label the ERP can send", () => {
+    const scale = ATELIER_SCALES_BY_SIGLA.get("#CR");
+    const table = BRAND_OFFICIAL_TABLES_V1.find(
+      (t) => t.scaleSigla === "#CR" && t.brand === "Crocs",
+    );
+    expect(scale).toBeDefined();
+    expect(table).toBeDefined();
+    for (const label of (scale?.labels ?? []) as string[]) {
+      expect(
+        table?.mappings.some((m) => m.sourceLabel === label),
+        `missing ${label}`,
+      ).toBe(true);
+    }
+  });
+
+  it("keeps the C-to-J wrap going up, and invents no UK column", () => {
+    const t = BRAND_OFFICIAL_TABLES_V1.find(
+      (x) => x.scaleSigla === "#CR" && x.brand === "Crocs",
+    );
+    const mm = (t?.mappings ?? []).map((m) => m.jpMm ?? 0);
+    for (let i = 1; i < mm.length; i++) {
+      expect(mm[i] as number).toBeGreaterThan(mm[i - 1] as number);
+    }
+    // Crocs publishes no UK sizes for kids.
+    for (const m of t?.mappings ?? []) expect(m.uk).toBeNull();
+  });
+});

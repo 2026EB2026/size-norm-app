@@ -818,6 +818,39 @@ export const ATELIER_SCALES_V1: readonly SizeScale[] = [
     ],
     aliases: {},
   },
+  {
+    // Crocs numbers kid shoes in its own C/J codes and the ERP tags them
+    // `SCALATAGLIE_Bambino Taglie Crocs`. That scale existed nowhere in
+    // the app, so every Crocs kid product failed to resolve its tag.
+    //
+    // `sourceScale: "US"` because the C/J code IS the US kid size. The
+    // conversion comes from the brand table: no master covers this
+    // numbering, so the generic table for this scale stays empty.
+    sigla: "#CR",
+    name: "Bambino Taglie Crocs",
+    gender: "kid",
+    sourceScale: "US",
+    labels: [
+      "C2/3",
+      "C4",
+      "C5",
+      "C6",
+      "C7",
+      "C8",
+      "C9",
+      "C10",
+      "C11",
+      "C12",
+      "C13",
+      "J1",
+      "J2",
+      "J3",
+      "J4",
+      "J5",
+      "J6",
+    ],
+    aliases: {},
+  },
 ] as const;
 
 /** Quick lookup by sigla. */

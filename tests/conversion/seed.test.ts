@@ -7,9 +7,9 @@ import {
 import { GENERIC_CONVERSION_TABLES_V1 } from "../../app/lib/conversion/conversion-tables-seed";
 import { MEN_MASTER, WOMEN_MASTER } from "../../app/lib/conversion/master-tables";
 
-describe("seed integrity — 28 V1 scales", () => {
-  it("has exactly 28 scales", () => {
-    expect(ATELIER_SCALES_V1).toHaveLength(28);
+describe("seed integrity — Atelier scales", () => {
+  it("has one entry per Atelier scale", () => {
+    expect(ATELIER_SCALES_V1).toHaveLength(29);
   });
 
   it("excludes #BZ (Roman numerals, out of V1 scope)", () => {
@@ -152,7 +152,14 @@ describe("seed integrity — generic conversion tables", () => {
   //   - `#DF` Bambino US Doppia: only 2 labels (`K10/K13.5`, `1/6`) and the
   //     men-side parser doesn't handle K-prefix or `1/6` as a recognized
   //     double-sizing pattern.
-  const SCALES_WITH_LEGITIMATELY_EMPTY_MAPPINGS = new Set(["#CE", "#DF"]);
+  //   - `#CR` Bambino Taglie Crocs: the C/J codes are Crocs' own numbering,
+  //     which no master covers. Its conversion lives in the brand table,
+  //     and Crocs is the only vendor on the scale.
+  const SCALES_WITH_LEGITIMATELY_EMPTY_MAPPINGS = new Set([
+    "#CE",
+    "#DF",
+    "#CR",
+  ]);
 
   it("the source column for numeric scales is non-null in at least one mapping (except known empty seeds)", () => {
     const numericScales = ATELIER_SCALES_V1.filter(
