@@ -130,6 +130,28 @@ function jpCmLabelToMm(label: string): number | null {
 }
 
 /**
+ * Maps a label on a wrapping kid scale onto the key the master table uses.
+ *
+ * `#BM` and `#BN` list K1…K13.5 and then start again at 1. That restart is
+ * the US kid convention: after little-kid 13 comes youth 1, fifteen sizes
+ * bigger, which the masters write `1Y`. A UGG Classic II shows the wrap
+ * plainly — K7 K8 … K13 1 2 3 4.
+ *
+ * So a `K` label is a little-kid size with the prefix dropped, and a bare
+ * number on such a scale is a youth size and gets a `Y`. Reading the bare
+ * ones literally put youth 1 at EU 16, a toddler size.
+ *
+ * Returns null for scales that do not wrap, which take the ordinary path.
+ */
+function kidWrapKey(scale: SizeScale, label: string): string | null {
+  const labels = scale.labels as string[];
+  if (!labels.some((l) => /^K\d/i.test(l))) return null;
+  if (/^K\d/i.test(label)) return label.slice(1);
+  if (/^\d/.test(label)) return `${label}Y`;
+  return null;
+}
+
+/**
  * Looks up a label in the appropriate master table, falling back to the kid
  * table when the gender is `kid` and the EU value is below the women's range
  * but within the kid range.
@@ -148,6 +170,12 @@ function lookupMasterForLabel(
     const mm = jpCmLabelToMm(label);
     if (mm === null) return null;
     return findRowByColumn(pickMaster(scale), "jpMm", mm);
+  }
+
+  // Wrapping kid scales key on a different token (K10 -> 10, 2 -> 2Y).
+  const wrapped = kidWrapKey(scale, label);
+  if (wrapped !== null) {
+    return findRowByColumn(pickMaster(scale), colKey, wrapped);
   }
 
   const normalizedLabel = normalizeScaleLabel(label);
@@ -185,12 +213,6 @@ function buildMapping(scale: SizeScale, label: string): ConversionMapping {
     const row = findRowByColumn(MEN_MASTER, "us", menPart);
     if (row === null) return emptyMapping(label);
     return mappingFromRow(label, row, { us: label });
-  }
-
-  // Bambino US K-prefix sizes — not covered by KID_MASTER directly because
-  // those use a different convention. Skip until merchant validates in M3.
-  if (label.startsWith("K")) {
-    return emptyMapping(label);
   }
 
   const row = lookupMasterForLabel(scale, label);

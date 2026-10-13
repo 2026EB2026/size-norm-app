@@ -342,3 +342,34 @@ describe("half sizes on US-keyed scales", () => {
     }
   });
 });
+
+describe("wrapping kid scales (#BM, #BN)", () => {
+  it("reads the restart after K13 as a youth size, not a toddler one", () => {
+    // UGG ships K7…K13 then 1 2 3 4. Read literally, that "1" matched the
+    // toddler 1 and came out EU 16 — about sixteen sizes small, printed on
+    // the product page rather than left blank.
+    const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === "#BM")!;
+    const k13 = t.mappings.find((m) => m.sourceLabel === "K13");
+    const one = t.mappings.find((m) => m.sourceLabel === "1");
+    expect(k13?.eu).toBe("29");
+    expect(one?.us).toBe("1Y");
+    expect(Number(one?.eu)).toBeGreaterThan(Number(k13?.eu));
+  });
+
+  it("leaves no label unresolved on either kid scale", () => {
+    for (const sigla of ["#BM", "#BN"]) {
+      const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === sigla)!;
+      for (const m of t.mappings) {
+        expect(m.eu, `${sigla} ${m.sourceLabel}`).toBeTruthy();
+      }
+    }
+  });
+
+  it("keeps the ladder monotonic across the wrap", () => {
+    const t = GENERIC_CONVERSION_TABLES_V1.find((x) => x.scaleSigla === "#BM")!;
+    const mm = t.mappings.map((m) => m.jpMm ?? 0);
+    for (let i = 1; i < mm.length; i++) {
+      expect(mm[i] as number, `row ${i}`).toBeGreaterThanOrEqual(mm[i - 1] as number);
+    }
+  });
+});

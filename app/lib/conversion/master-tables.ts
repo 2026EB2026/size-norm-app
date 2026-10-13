@@ -157,6 +157,20 @@ export const KID_MASTER: MasterRow[] = [
   { us: "2Y", eu: "33", uk: "1.5Y", jpMm: 200 },
   { us: "2.5Y", eu: "33.5", uk: "2Y", jpMm: 205 },
   { us: "3Y", eu: "34", uk: "2.5Y", jpMm: 210 },
+  // The youth run used to stop at 3Y, but `#BM` and `#BN` label youth sizes
+  // up to 7 and 8. Without these rows those labels had nothing to match.
+  { us: "3.5Y", eu: "35", uk: "3Y", jpMm: 215 },
+  { us: "4Y", eu: "36", uk: "3.5Y", jpMm: 220 },
+  { us: "4.5Y", eu: "36.5", uk: "4Y", jpMm: 225 },
+  { us: "5Y", eu: "37", uk: "4.5Y", jpMm: 230 },
+  { us: "5.5Y", eu: "37.5", uk: "5Y", jpMm: 235 },
+  { us: "6Y", eu: "38", uk: "5.5Y", jpMm: 240 },
+  { us: "6.5Y", eu: "38.5", uk: "6Y", jpMm: 245 },
+  { us: "7Y", eu: "39", uk: "6.5Y", jpMm: 250 },
+  { us: "7.5Y", eu: "39.5", uk: "7Y", jpMm: 255 },
+  { us: "8Y", eu: "40", uk: "7.5Y", jpMm: 260 },
+  { us: "8.5Y", eu: "41", uk: "8Y", jpMm: 265 },
+  { us: "9Y", eu: "42", uk: "8.5Y", jpMm: 270 },
 ];
 
 /**
