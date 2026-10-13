@@ -73,6 +73,7 @@ VENDOR = {
     "Veja": "Veja", "Kenzo": "Kenzo",
     "Moschino": "Moschino", "Jude": "Jude", "Bonpoint": "Bonpoint",
     "Lemaire": "Lemaire", "Aeyde": "Aeyde", "Dsquared2": "Dsquared2",
+    "Tory Burch": "Tory Burch",
     "Givenchy / Jil Sander": ["Givenchy", "Jil Sander"],
     "__generico uomo IT": None, "Rotate": None, "Hunter": None,
 }

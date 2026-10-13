@@ -117,3 +117,24 @@ describe("quarter sizes", () => {
     expect(t?.mappings.find((m) => m.sourceLabel === "35½")).toBeDefined();
   });
 });
+
+describe("Tory Burch", () => {
+  it("keeps the brand's half-size offset against the Italian convention", () => {
+    // Tory Burch publishes US 5 = IT 35.5, where the Italian convention puts
+    // US 5 at IT 35. Their products arrive on the US scale, so `R` is the
+    // table that actually gets used.
+    const r = GUIDE_UFFICIALI_TABLES.find(
+      (t) => t.brand === "Tory Burch" && t.scaleSigla === "R",
+    );
+    expect(r).toBeDefined();
+    expect(r?.mappings.find((m) => m.sourceLabel === "5")?.eu).toBe("35½");
+    expect(r?.mappings.find((m) => m.sourceLabel === "8")?.eu).toBe("38½");
+  });
+
+  it("publishes no UK column, so none is invented", () => {
+    const r = GUIDE_UFFICIALI_TABLES.find(
+      (t) => t.brand === "Tory Burch" && t.scaleSigla === "R",
+    );
+    for (const m of r?.mappings ?? []) expect(m.uk).toBeNull();
+  });
+});
