@@ -202,3 +202,44 @@ describe("Crocs kid scale (#CR)", () => {
     for (const m of t?.mappings ?? []) expect(m.uk).toBeNull();
   });
 });
+
+describe("New Balance", () => {
+  const nb = BRAND_OFFICIAL_TABLES_V1.filter((t) => t.brand === "New Balance");
+
+  it("covers all four scales the ERP actually sends", () => {
+    const siglas = new Set(nb.map((t) => t.scaleSigla));
+    for (const s of ["BQ", "AG", "P", "R", "#BM"]) {
+      expect(siglas.has(s), `missing ${s}`).toBe(true);
+    }
+  });
+
+  it("uses New Balance's own EU mapping, not the house one", () => {
+    // NB puts US men 10 at EU 44; the generic men's table says EU 43.
+    const p = nb.find((t) => t.scaleSigla === "P");
+    expect(p?.mappings.find((m) => m.sourceLabel === "10")?.eu).toBe("44");
+    // On kids the gap reaches two sizes: US kid 13 is EU 31 for NB, 29 here.
+    const bm = nb.find((t) => t.scaleSigla === "#BM");
+    expect(bm?.mappings.find((m) => m.sourceLabel === "K13")?.eu).toBe("31");
+  });
+
+  it("keeps the compound label on the M/W scale", () => {
+    const bq = nb.find((t) => t.scaleSigla === "BQ");
+    const row = bq?.mappings.find((m) => m.sourceLabel === "M6/W7.5");
+    expect(row?.us).toBe("M6/W7.5");
+    expect(row?.eu).toBe("38.5");
+  });
+
+  it("leaves the source's one typo blank instead of propagating it", () => {
+    // newbalance.it prints UK 5 on the kid EU 34.5 row, between UK 1.5 and 2.5.
+    const bm = nb.find((t) => t.scaleSigla === "#BM");
+    expect(bm?.mappings.find((m) => m.sourceLabel === "2.5")?.uk).toBeNull();
+  });
+
+  it("resolves every label of the kid scale", () => {
+    const scale = ATELIER_SCALES_BY_SIGLA.get("#BM");
+    const bm = nb.find((t) => t.scaleSigla === "#BM");
+    for (const label of (scale?.labels ?? []) as string[]) {
+      expect(bm?.mappings.some((m) => m.sourceLabel === label), label).toBe(true);
+    }
+  });
+});

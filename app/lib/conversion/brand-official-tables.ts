@@ -1,4 +1,5 @@
 import { GUIDE_UFFICIALI_TABLES } from "./guide-ufficiali-tables";
+import { NEW_BALANCE_TABLES } from "./new-balance-tables";
 import type { ConversionTable } from "./types";
 
 /**
@@ -152,6 +153,7 @@ const HAND_WRITTEN: readonly ConversionTable[] = [
 export const BRAND_OFFICIAL_TABLES_V1: readonly ConversionTable[] = [
   ...HAND_WRITTEN,
   ...GUIDE_UFFICIALI_TABLES,
+  ...NEW_BALANCE_TABLES,
 ];
 
 /** Every vendor string covered by an official chart, lowercased. */
