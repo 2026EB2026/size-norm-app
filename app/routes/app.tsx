@@ -9,9 +9,25 @@ import { ensureSeed } from "../lib/db/seed";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
   // First-install seed: runs once per shop, then becomes a no-op. Creates
-  // Shopify Metafield Definitions + inserts 28 V1 scales + 28 generic
-  // conversion tables on the first visit.
-  await ensureSeed(session.shop, admin);
+  // Shopify Metafield Definitions and inserts the Atelier scales plus
+  // their generic conversion tables on the first visit.
+  //
+  // Guarded, because this is the parent route of every admin page: an
+  // unreachable database used to take the whole app down with a bare
+  // "Application Error" and no message, which tells the merchant nothing
+  // and hides which of the two is broken. Seeding is a background concern
+  // and retries on the next request, so a failure here is logged and the
+  // admin still renders; pages that genuinely need the database will fail
+  // on their own terms, where the error says what it is.
+  try {
+    await ensureSeed(session.shop, admin);
+  } catch (e) {
+    // eslint-disable-next-line no-undef, no-console
+    console.error(
+      `[size-norm] ensureSeed failed for ${session.shop}:`,
+      e instanceof Error ? (e.stack ?? e.message) : e,
+    );
+  }
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
