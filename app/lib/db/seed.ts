@@ -324,6 +324,13 @@ export async function ensureSeed(
         where: { shopDomain },
         data: { seededAt: new Date() },
       });
+    }, {
+      // Here the transaction earns its keep: `seededAt` must not be set
+      // unless every scale landed. But 29 scales and their tables are far
+      // more than Prisma's 5-second default allows against a remote
+      // Postgres, so the window is set explicitly.
+      maxWait: 15_000,
+      timeout: 120_000,
     });
   }
 
@@ -335,7 +342,18 @@ export async function ensureSeed(
   const cacheKey = `${shopDomain}@${BRAND_SEED_REVISION}`;
   if (!brandScalesSeededInProcess.has(cacheKey)) {
     try {
-      await prisma.$transaction(async (tx) => {
+      // Deliberately NOT one transaction. These are idempotent upserts, and
+      // the set has grown to 29 Atelier scales, 120 brand scales and 131
+      // official charts — roughly 700 round trips. Prisma's interactive
+      // transactions time out after 5 seconds by default, so wrapping the
+      // lot guaranteed a P2028 on every request: the catch below swallowed
+      // it, the cache flag never got set, and each /app load paid the full
+      // cost again before rendering.
+      //
+      // Atomicity buys nothing here: a run that stops halfway leaves the
+      // rows it already wrote, and the next request redoes the rest.
+      {
+        const tx = prisma;
         // Atelier scales are seeded once (step 3), but their alias maps must
         // still be refreshed when the derivation rules change — the
         // foreign-column enrichment used to shadow a scale's own labels, so
@@ -388,19 +406,19 @@ export async function ensureSeed(
         // (isSeed=false) is theirs and survives, even if we stop shipping
         // our version of it.
         const shipped = new Set(
-          BRAND_OFFICIAL_TABLES_V1.map((t) => `${t.scaleSigla} ${t.brand}`),
+          BRAND_OFFICIAL_TABLES_V1.map((t) => `${t.scaleSigla}\u0000${t.brand}`),
         );
         const existingOfficial = await tx.conversionTable.findMany({
           where: { shopDomain, brand: { not: null }, isSeed: true },
           select: { id: true, scaleSigla: true, brand: true },
         });
         const stale = existingOfficial
-          .filter((t) => !shipped.has(`${t.scaleSigla} ${t.brand}`))
+          .filter((t) => !shipped.has(`${t.scaleSigla}\u0000${t.brand}`))
           .map((t) => t.id);
         if (stale.length > 0) {
           await tx.conversionTable.deleteMany({ where: { id: { in: stale } } });
         }
-      });
+      }
       brandScalesSeededInProcess.add(cacheKey);
     } catch (e) {
       // eslint-disable-next-line no-undef, no-console
