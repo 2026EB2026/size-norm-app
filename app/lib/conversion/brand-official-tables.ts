@@ -138,14 +138,76 @@ const HAND_WRITTEN: readonly ConversionTable[] = [
       { sourceLabel: "J6", us: "J6", eu: "39", uk: null, cm: "24.2", jpMm: 242 },
     ],
   },
+  {
+    // Source: keenfootwear.it/pages/guida-alle-taglie (tab UOMO) cross-checked
+    // against keenfootwear.co.uk/pages/size-chart, both read 2026-11-18. The
+    // Italian page publishes EU/US/CM only; the UK column comes from the
+    // British page, whose EU and CM columns match the Italian one row for row.
+    //
+    // Keen entered the catalogue on 2026-11-16, after the guide pack was
+    // transcribed, so until now its 25 products fell through to the generic
+    // men's master -- which reads US 7.5 as EU 40.5 / 248 mm against Keen's
+    // own EU 40 / 255 mm.
+    //
+    // Keen's ladder starts at US 7 and publishes no 12.5, so those labels are
+    // omitted and fall through to the generic table rather than being guessed.
+    scaleSigla: "P",
+    brand: "Keen",
+    isSeed: true,
+    mappings: [
+      { sourceLabel: "7", us: "7", eu: "39.5", uk: "6", cm: "25", jpMm: 250 },
+      { sourceLabel: "7½", us: "7.5", eu: "40", uk: "6.5", cm: "25.5", jpMm: 255 },
+      { sourceLabel: "8", us: "8", eu: "40.5", uk: "7", cm: "26", jpMm: 260 },
+      { sourceLabel: "8½", us: "8.5", eu: "41", uk: "7.5", cm: "26.5", jpMm: 265 },
+      { sourceLabel: "9", us: "9", eu: "42", uk: "8", cm: "27", jpMm: 270 },
+      { sourceLabel: "9½", us: "9.5", eu: "42.5", uk: "8.5", cm: "27.5", jpMm: 275 },
+      { sourceLabel: "10", us: "10", eu: "43", uk: "9", cm: "28", jpMm: 280 },
+      { sourceLabel: "10½", us: "10.5", eu: "44", uk: "9.5", cm: "28.5", jpMm: 285 },
+      { sourceLabel: "11", us: "11", eu: "44.5", uk: "10", cm: "29", jpMm: 290 },
+      { sourceLabel: "11½", us: "11.5", eu: "45", uk: "10.5", cm: "29.5", jpMm: 295 },
+      { sourceLabel: "12", us: "12", eu: "46", uk: "11", cm: "30", jpMm: 300 },
+      { sourceLabel: "13", us: "13", eu: "47", uk: "12", cm: "31", jpMm: 310 },
+    ],
+  },
+  {
+    // Source: keenfootwear.it/pages/guida-alle-taglie (tab DONNA) cross-checked
+    // against keenfootwear.co.uk/pages/size-chart, both read 2026-11-18. As
+    // above, the UK column comes from the British page.
+    //
+    // Keen's women's ladder starts at US 5 and skips 11.5; the R scale's "3½",
+    // "4" and "4½" are therefore omitted and fall through to the generic
+    // women's table.
+    //
+    // The EU column is deliberately irregular -- Keen jumps 36 to 37 and 41 to
+    // 42 -- so the ladder checker's constant-offset rule does not apply here.
+    scaleSigla: "R",
+    brand: "Keen",
+    isSeed: true,
+    mappings: [
+      { sourceLabel: "5", us: "5", eu: "35", uk: "2.5", cm: "22", jpMm: 220 },
+      { sourceLabel: "5½", us: "5.5", eu: "35.5", uk: "3", cm: "22.5", jpMm: 225 },
+      { sourceLabel: "6", us: "6", eu: "36", uk: "3.5", cm: "23", jpMm: 230 },
+      { sourceLabel: "6½", us: "6.5", eu: "37", uk: "4", cm: "23.5", jpMm: 235 },
+      { sourceLabel: "7", us: "7", eu: "37.5", uk: "4.5", cm: "24", jpMm: 240 },
+      { sourceLabel: "7½", us: "7.5", eu: "38", uk: "5", cm: "24.5", jpMm: 245 },
+      { sourceLabel: "8", us: "8", eu: "38.5", uk: "5.5", cm: "25", jpMm: 250 },
+      { sourceLabel: "8½", us: "8.5", eu: "39", uk: "6", cm: "25.5", jpMm: 255 },
+      { sourceLabel: "9", us: "9", eu: "39.5", uk: "6.5", cm: "26", jpMm: 260 },
+      { sourceLabel: "9½", us: "9.5", eu: "40", uk: "7", cm: "26.5", jpMm: 265 },
+      { sourceLabel: "10", us: "10", eu: "40.5", uk: "7.5", cm: "27", jpMm: 270 },
+      { sourceLabel: "10½", us: "10.5", eu: "41", uk: "8", cm: "27.5", jpMm: 275 },
+      { sourceLabel: "11", us: "11", eu: "42", uk: "8.5", cm: "28", jpMm: 280 },
+    ],
+  },
 ];
 
 /**
  * Every official manufacturer chart the app seeds.
  *
- * `HAND_WRITTEN` holds the two charts transcribed by hand (adidas on the `SUA`
- * scale, Dr. Martens kids on `#CE`); the rest come from the brands' own size
- * guides and are generated — see guide-ufficiali-tables.ts.
+ * `HAND_WRITTEN` holds the charts transcribed by hand (adidas on `SUA`,
+ * Dr. Martens kids on `#CE`, Crocs on `#CR`, Keen on `P` and `R`); the rest
+ * come from the brands' own size guides and are generated — see
+ * guide-ufficiali-tables.ts.
  *
  * Order matters only in that `lookupConversion` takes the FIRST table matching
  * (scaleSigla, brand), so the hand-written ones win where both exist.

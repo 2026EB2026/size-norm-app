@@ -243,3 +243,49 @@ describe("New Balance", () => {
     }
   });
 });
+
+describe("Keen official chart on P and R", () => {
+  function convert(sigla: string, label: string, vendor: string | null) {
+    const scale = ATELIER_SCALES_BY_SIGLA.get(sigla);
+    if (scale === undefined) throw new Error(`${sigla} missing from seed`);
+    const tables = [
+      ...GENERIC_CONVERSION_TABLES_V1.filter((t) => t.scaleSigla === sigla),
+      ...BRAND_OFFICIAL_TABLES_V1.filter((t) => t.scaleSigla === sigla),
+    ];
+    const parsed = parseLabel(label, scale);
+    if (parsed === null) return null;
+    return lookupConversion(sigla, vendor, parsed.canonical, tables);
+  }
+
+  it("reads men's US 7½ the way Keen publishes it", () => {
+    // The row the merchant checked on a live PDP: Keen's own guide says
+    // US 7.5 = UK 6.5 = EU 40 = 25.5 cm.
+    const r = convert("P", "7½", "Keen");
+    expect(r?.fromBrandSpecific).toBe(true);
+    expect(r?.matrix).toMatchObject({ us: "7.5", eu: "40", uk: "6.5" });
+    expect(r?.matrix.jpMm).toBe(255);
+  });
+
+  it("corrects the generic men's master, which drifts half a size", () => {
+    const generic = convert("P", "7½", "Some Other Brand");
+    expect(generic?.fromBrandSpecific).toBe(false);
+    expect(generic?.matrix.eu).toBe("40.5");
+    expect(convert("P", "7½", "Keen")?.matrix.eu).toBe("40");
+  });
+
+  it("falls through to the generic table below Keen's ladder", () => {
+    // Keen publishes nothing under US 7, so those labels must not be guessed.
+    expect(convert("P", "6", "Keen")?.fromBrandSpecific).toBe(false);
+  });
+
+  it("reads women's US 7½ the way Keen publishes it", () => {
+    const r = convert("R", "7½", "Keen");
+    expect(r?.fromBrandSpecific).toBe(true);
+    expect(r?.matrix).toMatchObject({ us: "7.5", eu: "38", uk: "5" });
+    expect(r?.matrix.jpMm).toBe(245);
+  });
+
+  it("matches the vendor string case-insensitively", () => {
+    expect(convert("P", "9", "KEEN")?.fromBrandSpecific).toBe(true);
+  });
+});
